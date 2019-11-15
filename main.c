@@ -57,9 +57,33 @@ fix14 v_in[nSamp] ;
 // thread control structs
 // note that UART input and output are threads
 static struct pt pt_fft ;
+static struct pt pt_met;
 
-// system 1 second interval tick
-int sys_time_seconds ;
+// === MIDI bytes ====================================================
+/*Status byte is 128 for NOTE OFF, 144 for NOTE ON*/                 
+int midi_sb = 128; //NOTE_ON/NOTE_OFF, MIDI channel
+int note_length; //not something we have to send over
+int midi_db1; //pitch value
+int midi_db1_prev; //pitch from prev second
+int midi_db2; //velocity value
+
+
+// == Smoothing Signal ==============================================
+#define ROUND(x) ((x)>=0?(int)(x+0.5):(int)(x-0.5))
+#define num_samples 10 //this would be used if we kept samples for averaging/mode purposes
+int samples[num_samples];
+
+
+//this should return the average rounded to the nearest int. Haven't tested this yet
+int average(int num, int array[]){
+        int i;
+        int sum;
+        for (i= 0; i<num_samples; i++){
+            sum += array[i];
+        }
+        return ROUND(sum/num_samples);
+}
+
 
 // === print line for TFT ============================================
 // print a line on the TFT
@@ -184,7 +208,7 @@ static PT_THREAD (protothread_fft(struct pt *pt))
     static int sx, y, ly, temp ;
     
     while(1) {
-        // yield time 1 second
+        // yield time 30 milliseconds
         PT_YIELD_TIME_msec(30);
         
         // enable ADC DMA channel and get
@@ -248,7 +272,7 @@ static PT_THREAD (protothread_fft(struct pt *pt))
         // Display on TFT
         int max_amplitude = 0;
         float max_frequency = 1;
-        int midi = 1;
+        midi_db1 = 1; //data byte 1
         // erase, then draw
         for (sample_number = 0; sample_number < nPixels; sample_number++) {
             tft_drawPixel(sample_number, pixels[sample_number], ILI9340_BLACK);
@@ -260,22 +284,68 @@ static PT_THREAD (protothread_fft(struct pt *pt))
             }
             // reuse fr to hold magnitude 
         }
+        
+        
+        /* Three cases:
+         Case 1: start note, no previous note
+         Case 2: End note, to silence
+         Case 3: End note, immediately start new note
+        if (midi_db1==48){
+            midi_sb = 128;
+            if (midi_db1_prev != 48) {//Case 2
+            //send message now
+            }
+        } 
+        else if (midi_db1 != midi_db1_prev) {
+            if (midi_db1_prev!=48){ //Case 3
+            midi_sb = 128;
+            //send message now
+            }
+            midi_sb = 144; //Case 1, 3
+            //send message now
+        }*/
+        
         sprintf(buffer, "PEAK FREQ: %.0f Hz", max_frequency );
         printLine2(1, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
-        midi = (int) 12*(log(max_frequency/440)/log(2)) + 69;
+        midi_db1 = (int) 12*(log(max_frequency/440)/log(2)) + 69;
         
-        sprintf(buffer, "MIDI Value: %d", midi );
+        sprintf(buffer, "MIDI DB1 Value: %d", midi_db1 );
         printLine2(2, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
-        int octave = (int) max((midi / 12) - 1, 0);
-        sprintf(buffer, "Note Name: %s%d", tones[midi%12], octave ); 
+        int octave = (int) max((midi_db1 / 12) - 1, 0);
+        sprintf(buffer, "Note Name: %s%d", tones[midi_db1%12], octave ); 
         printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
         // NEVER exit while
       } // END WHILE(1)
   PT_END(pt);
 } // FFT thread
+
+// === Metronome Thread =============================================
+    
+static PT_THREAD (protothread_met(struct pt *pt))
+{
+    PT_BEGIN(pt);
+    mPORTASetBits(BIT_0);   //Clear bits to ensure light is off.
+    mPORTASetPinsDigitalOut(BIT_0 );    //Set port as output
+    while(1) {
+        // yield time 1 second, 60bpm
+        PT_YIELD_TIME_msec(1000);
+        mPORTAToggleBits(BIT_0); //toggle LED
+        
+        if (midi_db1_prev != midi_db1){note_length = 0;}
+        else if (midi_db1 != 48){note_length++;}
+        
+        sprintf(buffer, "Note length: %d", note_length);
+        printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
+        
+        midi_db1_prev = midi_db1;
+        // NEVER exit while
+      } // END WHILE(1)
+  PT_END(pt);
+} // Metronome thread
+
 
 // === Main  ======================================================
 
@@ -306,7 +376,7 @@ void main(void) {
     //=== DMA Channel 0 transfer ADC data to array v_in ================================
     // Open DMA Chan1 for later use sending video to TV
     #define DMAchan0 0
-	DmaChnOpen(DMAchan0, 0, DMA_OPEN_DEFAULT);
+    DmaChnOpen(DMAchan0, 0, DMA_OPEN_DEFAULT);
     DmaChnSetTxfer(DMAchan0, (void*)&ADC1BUF0, (void*)v_in, 2, nSamp*2, 2); //512 16-bit integers
     DmaChnSetEventControl(DMAchan0, DMA_EV_START_IRQ(28)); // 28 is ADC done
     // ==============================================================================
@@ -334,11 +404,11 @@ void main(void) {
 
     // define setup parameters for OpenADC10
     // set AN11 and  as analog inputs
-    #define PARAM4	ENABLE_AN11_ANA // pin 24
+    #define PARAM4  ENABLE_AN11_ANA // pin 24
 
     // define setup parameters for OpenADC10
     // do not assign channels to scan
-    #define PARAM5	SKIP_SCAN_ALL
+    #define PARAM5  SKIP_SCAN_ALL
 
     // use ground as neg ref for A | use AN11 for input A     
     // configure to sample AN11 
@@ -366,7 +436,8 @@ void main(void) {
     
     // init the threads
     PT_INIT(&pt_fft);
-
+    PT_INIT(&pt_met);
+    
     // init the display
     tft_init_hw();
     tft_begin();
@@ -377,7 +448,9 @@ void main(void) {
     // round-robin scheduler for threads
     while (1) {
         PT_SCHEDULE(protothread_fft(&pt_fft));
+        PT_SCHEDULE(protothread_met(&pt_met));
     }
 } // main
 
 // === end  ======================================================
+
