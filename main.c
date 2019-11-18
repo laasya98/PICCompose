@@ -3,6 +3,10 @@
  * Author:      Bruce Land
  * 
  * Target PIC:  PIC32MX250F128B
+ * 
+ * ECE 4760 Final Project
+ * PICcompose
+ * Diane Sutyak, Laasya Renganathan, Tara van Nieuwstadt
  */
 
 ////////////////////////////////////
@@ -11,6 +15,8 @@
 #include "config_1_3_2.h"
 // threading library
 #include "pt_cornell_1_3_2.h"
+// port expander
+#include "port_expander_brl4.h"
 
 ////////////////////////////////////
 // graphics libraries
@@ -65,6 +71,7 @@ int midi_sb = 128; //NOTE_ON/NOTE_OFF, MIDI channel
 int note_length; //not something we have to send over
 int midi_db1; //pitch value
 int midi_db1_prev; //pitch from prev second
+int midi_db1_prev_fft; //pitch from previous fft run
 int midi_db2; //velocity value
 
 
@@ -317,6 +324,16 @@ static PT_THREAD (protothread_fft(struct pt *pt))
         sprintf(buffer, "Note Name: %s%d", tones[midi_db1%12], octave ); 
         printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
+        if (midi_db1 != midi_db1_prev_fft) {
+            cursor_pos(4,1);
+            sprintf(PT_send_buffer,"MIDI %d",midi_db1);
+            // by spawning a print thread
+            PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+            clr_right;
+            normal_text;
+        }
+        midi_db1_prev_fft = midi_db1;
+        
         // NEVER exit while
       } // END WHILE(1)
   PT_END(pt);
@@ -453,4 +470,3 @@ void main(void) {
 } // main
 
 // === end  ======================================================
-
