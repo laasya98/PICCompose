@@ -64,6 +64,7 @@ fix14 v_in[nSamp] ;
 // note that UART input and output are threads
 static struct pt pt_fft ;
 static struct pt pt_met;
+static struct pt pt_timer;
 
 // === MIDI bytes ====================================================
 /*Status byte is 128 for NOTE OFF, 144 for NOTE ON*/                 
@@ -73,6 +74,7 @@ int midi_db1; //pitch value
 int midi_db1_prev; //pitch from prev second
 int midi_db1_prev_fft; //pitch from previous fft run
 int midi_db2; //velocity value
+int bpm = 60; //metronome tempo
 
 
 // == Smoothing Signal ==============================================
@@ -324,20 +326,21 @@ static PT_THREAD (protothread_fft(struct pt *pt))
         sprintf(buffer, "Note Name: %s%d", tones[midi_db1%12], octave ); 
         printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
-        if (midi_db1 != midi_db1_prev_fft) {
-            cursor_pos(4,1);
-            sprintf(PT_send_buffer,"MIDI %d",midi_db1);
-            // by spawning a print thread
-            PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
-            clr_right;
-            normal_text;
+        /*if (midi_db1 != midi_db1_prev_fft) {
+          cursor_pos(4,1);
+          sprintf(PT_send_buffer,"MIDI %d",midi_db1);
+          // by spawning a print thread
+          PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+          clr_right;
+          normal_text;
         }
-        midi_db1_prev_fft = midi_db1;
+        midi_db1_prev_fft = midi_db1;*/
         
         // NEVER exit while
       } // END WHILE(1)
   PT_END(pt);
 } // FFT thread
+
 
 // === Metronome Thread =============================================
     
@@ -348,11 +351,45 @@ static PT_THREAD (protothread_met(struct pt *pt))
     mPORTASetPinsDigitalOut(BIT_0 );    //Set port as output
     while(1) {
         // yield time 1 second, 60bpm
-        PT_YIELD_TIME_msec(1000);
+        PT_YIELD_TIME_msec(1000*60/bpm);
         mPORTAToggleBits(BIT_0); //toggle LED
         
-        if (midi_db1_prev != midi_db1){note_length = 0;}
-        else if (midi_db1 != 48){note_length++;}
+        //if (midi_db1_prev != midi_db1){note_length = 0;}
+        //else if (midi_db1 != 48){note_length++;}
+        
+        //sprintf(buffer, "Note length: %d", note_length);
+        //printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
+        
+        //midi_db1_prev = midi_db1;
+      
+        // NEVER exit while
+      } // END WHILE(1)
+  PT_END(pt);
+} // Metronome thread
+
+
+// === Timer Thread =============================================
+
+static PT_THREAD (protothread_timer(struct pt *pt))
+{
+    PT_BEGIN(pt);
+   
+    while(1) {
+        // yield time 1 millisecond
+        PT_YIELD_TIME_msec(1);
+        
+        if (midi_db1_prev != midi_db1) {
+          // Send MIDI note encoding
+          cursor_pos(4,1);
+          sprintf(PT_send_buffer,"MIDI %d",midi_db1);
+          // by spawning a print thread
+          PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+          clr_right;
+          normal_text;
+          // reset note length
+          note_length = 0;
+        }
+        else if (midi_db1 != 48) note_length++;
         
         sprintf(buffer, "Note length: %d", note_length);
         printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
@@ -361,8 +398,7 @@ static PT_THREAD (protothread_met(struct pt *pt))
         // NEVER exit while
       } // END WHILE(1)
   PT_END(pt);
-} // Metronome thread
-
+} // Timer thread
 
 // === Main  ======================================================
 
@@ -454,6 +490,7 @@ void main(void) {
     // init the threads
     PT_INIT(&pt_fft);
     PT_INIT(&pt_met);
+    PT_INIT(&pt_timer);
     
     // init the display
     tft_init_hw();
@@ -466,6 +503,7 @@ void main(void) {
     while (1) {
         PT_SCHEDULE(protothread_fft(&pt_fft));
         PT_SCHEDULE(protothread_met(&pt_met));
+        PT_SCHEDULE(protothread_timer(&pt_timer));
     }
 } // main
 
