@@ -80,9 +80,23 @@ int midi_db1; //pitch value
 int midi_db1_prev; //pitch from prev second
 int midi_db1_prev_fft; //pitch from previous fft run
 int midi_db2; //velocity value
+
 int bpm = 60; //metronome tempo
+int bpm_array[5];
+int bpm_index;
 int record_mode; //record mode status
+int prev_record_mode;
 int record_time; //running time of recording in milliseconds
+
+//==============FSM===========================
+volatile int prev_i = -1;
+volatile int PushState = 0;
+volatile int press;
+#define NoPush 0
+#define MaybePush 1
+#define  Pushed 2
+#define MaybeNoPush 3  
+//=============================================
 
 
 // == Smoothing Signal ==============================================
@@ -212,7 +226,6 @@ begin
 end
 
 // === FFT Thread =============================================
-    
 // DMA channel busy flag
 #define CHN_BUSY 0x80
 #define log_min 0x10   
@@ -240,7 +253,11 @@ static PT_THREAD (protothread_fft(struct pt *pt))
         // compute and display fft
         // load input array
         for (sample_number=0; sample_number<nSamp-1; sample_number++){
-            // window the input and perhaps scale it
+            if (sample_number<256) {v_in[sample_number] = v_in[sample_number]*(1/256)*sample_number;}
+            else {
+                v_in[sample_number] = v_in[sample_number]*(1-(1/256)*(sample_number-256));
+            }
+            
             fr[sample_number] = multfix14(v_in[sample_number], window[sample_number]); 
             fi[sample_number] = 0 ;
         }
@@ -365,6 +382,7 @@ static PT_THREAD (protothread_met(struct pt *pt))
         if (record_mode) {
             mPORTAToggleBits(BIT_0); //toggle LED
         }
+        else {mPORTAClearBits(BIT_0);}
         
         //if (midi_db1_prev != midi_db1){note_length = 0;}
         //else if (midi_db1 != 48){note_length++;}
@@ -393,6 +411,7 @@ static PT_THREAD (protothread_timer(struct pt *pt))
         PT_YIELD_TIME_msec(1);
         
         start_spi2_critical_section;
+        prev_record_mode = record_mode;
         record_mode = (readPE(GPIOZ) & 0x1);
         end_spi2_critical_section;
         
@@ -403,12 +422,12 @@ static PT_THREAD (protothread_timer(struct pt *pt))
                 
                 if (midi_db1_prev != ZERO) {
                     // Send NOTE STOP message
-                    sprintf(PT_send_buffer,"~STOP %x %d~\n",record_time,midi_db1_prev);
+                    sprintf(PT_send_buffer,"~ STOP %d %d ~\n",record_time,midi_db1_prev);
                     PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
                 }
                 if (midi_db1 != ZERO) {
                     // Send NOTE START message
-                    sprintf(PT_send_buffer,"~START %x %d~\n",record_time,midi_db1);
+                    sprintf(PT_send_buffer,"~ START %d %d ~\n",record_time,midi_db1);
                     PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
                 }
               
@@ -421,7 +440,6 @@ static PT_THREAD (protothread_timer(struct pt *pt))
 
             sprintf(buffer, "Note length: %d", note_length);
             printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
-            
             
 
             midi_db1_prev = midi_db1;
@@ -440,7 +458,7 @@ static PT_THREAD (protothread_timer(struct pt *pt))
 static PT_THREAD (protothread_key(struct pt *pt))
 {
     PT_BEGIN(pt);
-    static int keypad, i, pattern;
+    static int keypad, i, pattern, test_bpm, j;
     // order is 0 thru 9 then * ==10 and # ==11
     // no press = -1
     // table is decoded to natural digit order (except for * and #)
@@ -468,8 +486,7 @@ static PT_THREAD (protothread_key(struct pt *pt))
     mPortYSetPinsIn(BIT_4 | BIT_5 | BIT_6 | BIT_7);    //Set port as input
     mPortYEnablePullUp(BIT_4 | BIT_5 | BIT_6 | BIT_7);
     
-    // init the Z port to try other output functions
-    mPortZSetPinsOut(BIT_0 | BIT_1);    //Set port as output
+    
     end_spi2_critical_section ;
     
     // the read-pattern if no button is pulled down by an output
@@ -500,20 +517,64 @@ static PT_THREAD (protothread_key(struct pt *pt))
                 if (i==24) i=-1;
             }
             else i = -1; // no button pushed
+            
+            //debouncing FSM
+            switch (PushState) {
+                case NoPush:
+                    if (i != -1) {
+                        PushState=MaybePush;
+                        prev_i = i;
+                    }
+                    else PushState=NoPush;
+                    break;
+
+                case MaybePush:
+                    if (i == prev_i) {
+                        PushState=Pushed; 
+                        //construct 3-digit bpm
+                        if (i>-1 && i<10) {
+                            if (bpm_index>2){bpm_index = 0;}
+                            bpm_array[bpm_index] = i;
+                            bpm_index++;
+                        }
+                        if (i==10){
+                            for (j = 0; j<5; j++){
+                                bpm_array[j]=0;
+                            }
+                            bpm_index = 0;
+                        }
+                        test_bpm = (bpm_array[0]*100)+(bpm_array[1]*10)+bpm_array[2];
+                        if (test_bpm != 0) {bpm = test_bpm;} //prevent divide by zero error
+                        else {bpm = 60;} //default bpm
+                    }
+                    else PushState=NoPush;
+                    break;
+
+                case Pushed:  
+                    if (i == prev_i) PushState=Pushed; //FIX: i==prev_i
+                    else PushState=MaybeNoPush;    
+                    break;
+
+                case MaybeNoPush:
+                    if (i == prev_i) PushState=Pushed;
+                    else PushState=NoPush;    
+                    break;
+            } // end case
+        }
 
             // draw key number
-            if (i>-1 && i<10) sprintf(buffer,"Key: %d", i);
-            if (i==10 ) sprintf(buffer,"Key: *");
-            if (i==11 ) sprintf(buffer,"Key: #");
-            if (i>11 && i<22 ) sprintf(buffer, "Key: shift-%d", i-12);
-            if (i==22 ) sprintf(buffer,"Key: shift-*");
-            if (i==23 ) sprintf(buffer,"Key: shift-#");
+            if (i>-1 && i<11) {sprintf(buffer,"Tempo: %d", bpm);}
+            //if (i==10 ) {sprintf(buffer,"Tempo: *");}
+            if (i==11 ) sprintf(buffer,"Tempo: #");
+            if (i>11 && i<22 ) sprintf(buffer, "Tempo: shift-%d", i-12);
+            if (i==22 ) sprintf(buffer,"Tempo: shift-*");
+            if (i==23 ) sprintf(buffer,"Tempo: shift-#");
             if (i>-1 && i<12) printLine2(5, buffer, ILI9340_GREEN, ILI9340_BLACK);
             else if (i>-1) printLine2(5, buffer, ILI9340_RED, ILI9340_BLACK);
             
             //sprintf(PT_send_buffer,"Key: %d\n",i);
             //PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
-        }
+        
         // NEVER exit while
       } // END WHILE(1)
   PT_END(pt);
@@ -608,6 +669,9 @@ void main(void) {
     // ========================================================
     
     initPE();
+    
+    // init the Z port to try other output functions
+    mPortZSetPinsIn(BIT_0 | BIT_1);    //Set port as input
     
     // init the threads
     PT_INIT(&pt_fft);
