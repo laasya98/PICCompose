@@ -48,6 +48,10 @@
   MIT license, all text above must be included in any redistribution
  ****************************************************/
 
+
+#define start_spi2_critical_section INTEnable(INT_T2, 0);
+#define end_spi2_critical_section INTEnable(INT_T2, 1);
+
 // === the fixed point macros ========================================
 typedef signed short fix14 ;
 #define multfix14(a,b) ((fix14)((((long)(a))*((long)(b)))>>14)) //multiply two fixed 2.14
@@ -58,6 +62,7 @@ typedef signed short fix14 ;
 #define nSamp 512
 #define nPixels 256
 fix14 v_in[nSamp] ;
+#define ZERO 48 //try to relate to BIN_IGNORE?
 
 // === thread structures ============================================
 // thread control structs
@@ -65,6 +70,7 @@ fix14 v_in[nSamp] ;
 static struct pt pt_fft ;
 static struct pt pt_met;
 static struct pt pt_timer;
+static struct pt pt_key;
 
 // === MIDI bytes ====================================================
 /*Status byte is 128 for NOTE OFF, 144 for NOTE ON*/                 
@@ -75,6 +81,8 @@ int midi_db1_prev; //pitch from prev second
 int midi_db1_prev_fft; //pitch from previous fft run
 int midi_db2; //velocity value
 int bpm = 60; //metronome tempo
+int record_mode; //record mode status
+int record_time; //running time of recording in milliseconds
 
 
 // == Smoothing Signal ==============================================
@@ -349,10 +357,14 @@ static PT_THREAD (protothread_met(struct pt *pt))
     PT_BEGIN(pt);
     mPORTASetBits(BIT_0);   //Clear bits to ensure light is off.
     mPORTASetPinsDigitalOut(BIT_0 );    //Set port as output
+    mPORTAClearBits(BIT_0);
     while(1) {
         // yield time 1 second, 60bpm
-        PT_YIELD_TIME_msec(1000*60/bpm);
-        mPORTAToggleBits(BIT_0); //toggle LED
+        PT_YIELD_TIME_msec(1000*30/bpm);
+        
+        if (record_mode) {
+            mPORTAToggleBits(BIT_0); //toggle LED
+        }
         
         //if (midi_db1_prev != midi_db1){note_length = 0;}
         //else if (midi_db1 != 48){note_length++;}
@@ -373,32 +385,140 @@ static PT_THREAD (protothread_met(struct pt *pt))
 static PT_THREAD (protothread_timer(struct pt *pt))
 {
     PT_BEGIN(pt);
+    
+    mPortYSetPinsIn(BIT_0);
    
     while(1) {
         // yield time 1 millisecond
         PT_YIELD_TIME_msec(1);
         
-        if (midi_db1_prev != midi_db1) {
-          // Send MIDI note encoding
-          cursor_pos(4,1);
-          sprintf(PT_send_buffer,"MIDI %d",midi_db1);
-          // by spawning a print thread
-          PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
-          clr_right;
-          normal_text;
-          // reset note length
-          note_length = 0;
+        start_spi2_critical_section;
+        record_mode = (readPE(GPIOZ) & 0x1);
+        end_spi2_critical_section;
+        
+        if (record_mode) {
+            if (midi_db1_prev != midi_db1) {
+              // Send MIDI note encoding
+              //cursor_pos(4,1);
+                
+                if (midi_db1_prev != ZERO) {
+                    // Send NOTE STOP message
+                    sprintf(PT_send_buffer,"~STOP %x %d~\n",record_time,midi_db1_prev);
+                    PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+                }
+                if (midi_db1 != ZERO) {
+                    // Send NOTE START message
+                    sprintf(PT_send_buffer,"~START %x %d~\n",record_time,midi_db1);
+                    PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+                }
+              
+              //clr_right;
+              //normal_text;
+              // reset note length
+              note_length = 0;
+            }
+            //else if (midi_db1 != ZERO) note_length++;
+
+            sprintf(buffer, "Note length: %d", note_length);
+            printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
+            
+            
+
+            midi_db1_prev = midi_db1;
+            record_time++;
         }
-        else if (midi_db1 != 48) note_length++;
-        
-        sprintf(buffer, "Note length: %d", note_length);
-        printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
-        
-        midi_db1_prev = midi_db1;
+        sprintf(buffer, "RECORD: %x",record_mode);
+        printLine2(6, buffer, ILI9340_WHITE, ILI9340_BLACK);
         // NEVER exit while
       } // END WHILE(1)
   PT_END(pt);
 } // Timer thread
+
+
+// === Keypad Thread =============================================
+
+static PT_THREAD (protothread_key(struct pt *pt))
+{
+    PT_BEGIN(pt);
+    static int keypad, i, pattern;
+    // order is 0 thru 9 then * ==10 and # ==11
+    // no press = -1
+    // table is decoded to natural digit order (except for * and #)
+    // with shift key codes for each key
+    // keys 0-9 return the digit number
+    // keys 10 and 11 are * adn # respectively
+    // Keys 12 to 21 are the shifted digits
+    // keys 22 and 23 are shifted * and # respectively
+    static int keytable[24]=
+    //        0     1      2    3     4     5     6      7    8     9    10-*  11-#
+            {0xd7, 0xbe, 0xde, 0xee, 0xbd, 0xdd, 0xed, 0xbb, 0xdb, 0xeb, 0xb7, 0xe7,
+    //        s0     s1    s2  s3    s4    s5    s6     s7   s8    s9    s10-* s11-#
+             0x57, 0x3e, 0x5e, 0x6e, 0x3d, 0x5d, 0x6d, 0x3b, 0x5b, 0x6b, 0x37, 0x67};
+    // bit pattern for each row of the keypad scan -- active LOW
+    // bit zero low is first entry
+    static char out_table[4] = {0b1110, 0b1101, 0b1011, 0b0111};
+    // init the port expander
+    start_spi2_critical_section;
+    
+    // PortY on Expander ports as digital outputs
+    mPortYSetPinsOut(BIT_0 | BIT_1 | BIT_2 | BIT_3);    //Set port as output
+    // PortY as inputs
+    // note that bit 7 will be shift key input, 
+    // separate from keypad
+    mPortYSetPinsIn(BIT_4 | BIT_5 | BIT_6 | BIT_7);    //Set port as input
+    mPortYEnablePullUp(BIT_4 | BIT_5 | BIT_6 | BIT_7);
+    
+    // init the Z port to try other output functions
+    mPortZSetPinsOut(BIT_0 | BIT_1);    //Set port as output
+    end_spi2_critical_section ;
+    
+    // the read-pattern if no button is pulled down by an output
+    #define no_button (0x70)
+
+      while(1) {
+        // yield time
+        PT_YIELD_TIME_msec(30);
+        
+        if (!record_mode) {
+            for (i=0; i<4; i++) {
+                start_spi2_critical_section;
+                // scan each rwo active-low
+                writePE(GPIOY, out_table[i]);
+                //reading the port also reads the outputs
+                keypad  = readPE(GPIOY);
+                end_spi2_critical_section;
+                // was there a keypress?
+                if((keypad & no_button) != no_button) { break;}
+            }
+
+            // search for keycode
+            if (keypad > 0){ // then button is pushed
+                for (i=0; i<24; i++){
+                    if (keytable[i]==keypad) break;
+                }
+                // if invalid, two button push, set to -1
+                if (i==24) i=-1;
+            }
+            else i = -1; // no button pushed
+
+            // draw key number
+            if (i>-1 && i<10) sprintf(buffer,"Key: %d", i);
+            if (i==10 ) sprintf(buffer,"Key: *");
+            if (i==11 ) sprintf(buffer,"Key: #");
+            if (i>11 && i<22 ) sprintf(buffer, "Key: shift-%d", i-12);
+            if (i==22 ) sprintf(buffer,"Key: shift-*");
+            if (i==23 ) sprintf(buffer,"Key: shift-#");
+            if (i>-1 && i<12) printLine2(5, buffer, ILI9340_GREEN, ILI9340_BLACK);
+            else if (i>-1) printLine2(5, buffer, ILI9340_RED, ILI9340_BLACK);
+            
+            //sprintf(PT_send_buffer,"Key: %d\n",i);
+            //PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+        }
+        // NEVER exit while
+      } // END WHILE(1)
+  PT_END(pt);
+} // Keypad thread
+
 
 // === Main  ======================================================
 
@@ -487,10 +607,13 @@ void main(void) {
     }
     // ========================================================
     
+    initPE();
+    
     // init the threads
     PT_INIT(&pt_fft);
     PT_INIT(&pt_met);
     PT_INIT(&pt_timer);
+    PT_INIT(&pt_key);
     
     // init the display
     tft_init_hw();
@@ -504,6 +627,7 @@ void main(void) {
         PT_SCHEDULE(protothread_fft(&pt_fft));
         PT_SCHEDULE(protothread_met(&pt_met));
         PT_SCHEDULE(protothread_timer(&pt_timer));
+        PT_SCHEDULE(protothread_key(&pt_key));
     }
 } // main
 
