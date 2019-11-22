@@ -87,6 +87,7 @@ int bpm_index;
 int record_mode; //record mode status
 int prev_record_mode;
 int record_time; //running time of recording in milliseconds
+int tempo_color = ILI9340_GREEN;
 
 //==============FSM===========================
 volatile int prev_i = -1;
@@ -298,8 +299,8 @@ static PT_THREAD (protothread_fft(struct pt *pt))
         
         // timer 4 set up with prescalar=8, 
         // hence mult reading by 8 to get machine cycles
-        sprintf(buffer, "FFT cycles %d", (ReadTimer4())*8);
-        printLine2(0, buffer, ILI9340_WHITE, ILI9340_BLACK);
+        //sprintf(buffer, "FFT cycles %d", (ReadTimer4())*8);
+        //printLine2(0, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
         
         
@@ -309,9 +310,9 @@ static PT_THREAD (protothread_fft(struct pt *pt))
         midi_db1 = 1; //data byte 1
         // erase, then draw
         for (sample_number = 0; sample_number < nPixels; sample_number++) {
-            tft_drawPixel(sample_number, pixels[sample_number], ILI9340_BLACK);
+            //tft_drawPixel(sample_number, pixels[sample_number], ILI9340_BLACK);
             pixels[sample_number] = -fr[sample_number] + 200 ;
-            tft_drawPixel(sample_number, pixels[sample_number], ILI9340_WHITE);
+            //tft_drawPixel(sample_number, pixels[sample_number], ILI9340_WHITE);
             if ((fr[sample_number] > max_amplitude) && (sample_number > BIN_IGNORE)) {
                 max_amplitude = fr[sample_number];
                 max_frequency = sample_number * BIN_WIDTH; // bin width
@@ -339,17 +340,19 @@ static PT_THREAD (protothread_fft(struct pt *pt))
             //send message now
         }*/
         
-        sprintf(buffer, "PEAK FREQ: %.0f Hz", max_frequency );
-        printLine2(1, buffer, ILI9340_WHITE, ILI9340_BLACK);
+        //sprintf(buffer, "PEAK FREQ: %.0f Hz", max_frequency );
+        //printLine2(1, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
         midi_db1 = (int) 12*(log(max_frequency/440)/log(2)) + 69;
         
-        sprintf(buffer, "MIDI DB1 Value: %d", midi_db1 );
-        printLine2(2, buffer, ILI9340_WHITE, ILI9340_BLACK);
+        //sprintf(buffer, "MIDI DB1 Value: %d", midi_db1 );
+        //printLine2(2, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
         int octave = (int) max((midi_db1 / 12) - 1, 0);
+        
+        // remove flicker: only re-draw fill round rect over note name when changes
         sprintf(buffer, "Note Name: %s%d", tones[midi_db1%12], octave ); 
-        printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
+        printLine2(1, buffer, ILI9340_WHITE, ILI9340_BLACK);
         
         /*if (midi_db1 != midi_db1_prev_fft) {
           cursor_pos(4,1);
@@ -415,7 +418,14 @@ static PT_THREAD (protothread_timer(struct pt *pt))
         record_mode = (readPE(GPIOZ) & 0x1);
         end_spi2_critical_section;
         
+        
         if (record_mode) {
+            
+            if (!prev_record_mode){
+                sprintf(PT_send_buffer,"~ BEGIN ~\n");
+                PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+            }
+            
             if (midi_db1_prev != midi_db1) {
               // Send MIDI note encoding
               //cursor_pos(4,1);
@@ -438,15 +448,29 @@ static PT_THREAD (protothread_timer(struct pt *pt))
             }
             //else if (midi_db1 != ZERO) note_length++;
 
-            sprintf(buffer, "Note length: %d", note_length);
-            printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
+            //sprintf(buffer, "Note length: %d", note_length);
+            //printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
             
+            sprintf(buffer, "RECORDING");
+            printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
 
             midi_db1_prev = midi_db1;
             record_time++;
+        } else {
+            
+            if (prev_record_mode){
+                sprintf(PT_send_buffer,"~ END ~\n");
+                PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+                tempo_color = ILI9340_GREEN;
+                sprintf(buffer,"Tempo: %d", bpm);
+                printLine2(2, buffer, tempo_color, ILI9340_BLACK);
+            }
+            
+            // make this a fill round rect
+            sprintf(buffer, "         ");
+            printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
         }
-        sprintf(buffer, "RECORD: %x",record_mode);
-        printLine2(6, buffer, ILI9340_WHITE, ILI9340_BLACK);
+        
         // NEVER exit while
       } // END WHILE(1)
   PT_END(pt);
@@ -537,7 +561,8 @@ static PT_THREAD (protothread_key(struct pt *pt))
                             bpm_array[bpm_index] = i;
                             bpm_index++;
                         }
-                        if (i==10){
+                        if (i==10){ //press * to clear or cancel
+                            tempo_color = ILI9340_GREEN;
                             for (j = 0; j<5; j++){
                                 bpm_array[j]=0;
                             }
@@ -546,6 +571,16 @@ static PT_THREAD (protothread_key(struct pt *pt))
                         test_bpm = (bpm_array[0]*100)+(bpm_array[1]*10)+bpm_array[2];
                         if (test_bpm != 0) {bpm = test_bpm;} //prevent divide by zero error
                         else {bpm = 60;} //default bpm
+                        if (i==11){
+                            //cursor_pos(4,1);
+                            sprintf(PT_send_buffer,"~ BPM %d ~\n",bpm);
+                            PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+                            tempo_color = ILI9340_RED;
+                            sprintf(buffer, "READY TO RECORD");
+                            printLine2(3, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
+                            sprintf(buffer, "PRESS * TO CANCEL");
+                            printLine(7, buffer, ILI9340_WHITE, ILI9340_BLACK);
+                        }
                     }
                     else PushState=NoPush;
                     break;
@@ -563,14 +598,14 @@ static PT_THREAD (protothread_key(struct pt *pt))
         }
 
             // draw key number
-            if (i>-1 && i<11) {sprintf(buffer,"Tempo: %d", bpm);}
+            if (i>-1 && i<12) {sprintf(buffer,"Tempo: %d", bpm);}
             //if (i==10 ) {sprintf(buffer,"Tempo: *");}
-            if (i==11 ) sprintf(buffer,"Tempo: #");
+            //if (i==11 ) sprintf(buffer,"Tempo: #");
             if (i>11 && i<22 ) sprintf(buffer, "Tempo: shift-%d", i-12);
             if (i==22 ) sprintf(buffer,"Tempo: shift-*");
             if (i==23 ) sprintf(buffer,"Tempo: shift-#");
-            if (i>-1 && i<12) printLine2(5, buffer, ILI9340_GREEN, ILI9340_BLACK);
-            else if (i>-1) printLine2(5, buffer, ILI9340_RED, ILI9340_BLACK);
+            if (i>-1 && i<12) printLine2(2, buffer, tempo_color, ILI9340_BLACK);
+            else if (i>-1) printLine2(2, buffer, ILI9340_RED, ILI9340_BLACK);
             
             //sprintf(PT_send_buffer,"Key: %d\n",i);
             //PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
