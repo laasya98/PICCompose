@@ -350,10 +350,6 @@ static PT_THREAD (protothread_fft(struct pt *pt))
         
         int octave = (int) max((midi_db1 / 12) - 1, 0);
         
-        // remove flicker: only re-draw fill round rect over note name when changes
-        sprintf(buffer, "Note Name: %s%d", tones[midi_db1%12], octave ); 
-        printLine2(1, buffer, ILI9340_WHITE, ILI9340_BLACK);
-        
         /*if (midi_db1 != midi_db1_prev_fft) {
           cursor_pos(4,1);
           sprintf(PT_send_buffer,"MIDI %d",midi_db1);
@@ -424,6 +420,9 @@ static PT_THREAD (protothread_timer(struct pt *pt))
             if (!prev_record_mode){
                 sprintf(PT_send_buffer,"~ BEGIN ~\n");
                 PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+              
+                sprintf(buffer, "RECORDING");
+                printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
             }
             
             if (midi_db1_prev != midi_db1) {
@@ -439,6 +438,19 @@ static PT_THREAD (protothread_timer(struct pt *pt))
                     // Send NOTE START message
                     sprintf(PT_send_buffer,"~ START %d %d ~\n",record_time,midi_db1);
                     PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+                  
+                    tft_setCursor(80, 20); //test
+                    tft_fillRoundRect(80, 20, 10, 16, 2, ILI9340_BLACK); //test
+                    tft_setTextColor(ILI9340_WHITE); 
+                    tft_setTextSize(2);
+                    sprintf(buffer,"%s%d", tones[midi_db1%12], octave );
+                    tft_writeString(buffer);
+                } else {
+                    tft_setCursor(80, 20); //test
+                    tft_fillRoundRect(80, 20, 10, 16, 2, ILI9340_BLACK); //test
+                    tft_setTextColor(ILI9340_WHITE); 
+                    tft_setTextSize(2);
+                    tft_writeString("-");
                 }
               
               //clr_right;
@@ -450,12 +462,10 @@ static PT_THREAD (protothread_timer(struct pt *pt))
 
             //sprintf(buffer, "Note length: %d", note_length);
             //printLine2(4, buffer, ILI9340_WHITE, ILI9340_BLACK);
-            
-            sprintf(buffer, "RECORDING");
-            printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
 
             midi_db1_prev = midi_db1;
             record_time++;
+          
         } else {
             
             if (prev_record_mode){
@@ -464,11 +474,10 @@ static PT_THREAD (protothread_timer(struct pt *pt))
                 tempo_color = ILI9340_GREEN;
                 sprintf(buffer,"Tempo: %d", bpm);
                 printLine2(2, buffer, tempo_color, ILI9340_BLACK);
+              
+                tft_fillRoundRect(0, 60, 100, 16, 1, ILI9340_BLACK); //test
             }
             
-            // make this a fill round rect
-            sprintf(buffer, "         ");
-            printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
         }
         
         // NEVER exit while
@@ -720,6 +729,10 @@ void main(void) {
     tft_fillScreen(ILI9340_BLACK);
     //240x320 vertical display
     tft_setRotation(1); // Use tft_setRotation(1) for 320x240
+  
+    // write initial words
+    sprintf(buffer, "Note Name: -"); 
+    printLine2(1, buffer, ILI9340_WHITE, ILI9340_BLACK);
 
     // round-robin scheduler for threads
     while (1) {
