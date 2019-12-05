@@ -89,6 +89,30 @@ int prev_record_mode;
 int record_time; //running time of recording in milliseconds
 int tempo_color = ILI9340_GREEN;
 int octave;
+int tempo_lock;
+int keypad, i;
+
+// bit pattern for each row of the keypad scan -- active LOW
+// bit zero low is first entry
+char out_table[4] = {0b1110, 0b1101, 0b1011, 0b0111};
+
+// the read-pattern if no button is pulled down by an output
+#define no_button (0x70)
+
+// order is 0 thru 9 then * ==10 and # ==11
+// no press = -1
+// table is decoded to natural digit order (except for * and #)
+// with shift key codes for each key
+// keys 0-9 return the digit number
+// keys 10 and 11 are * adn # respectively
+// Keys 12 to 21 are the shifted digits
+// keys 22 and 23 are shifted * and # respectively
+static int keytable[24]=
+//        0     1      2    3     4     5     6      7    8     9    10-*  11-#
+        {0xd7, 0xbe, 0xde, 0xee, 0xbd, 0xdd, 0xed, 0xbb, 0xdb, 0xeb, 0xb7, 0xe7,
+//        s0     s1    s2  s3    s4    s5    s6     s7   s8    s9    s10-* s11-#
+         0x57, 0x3e, 0x5e, 0x6e, 0x3d, 0x5d, 0x6d, 0x3b, 0x5b, 0x6b, 0x37, 0x67};
+
 
 //==============FSM===========================
 volatile int prev_i = -1;
@@ -122,7 +146,7 @@ int average(int num, int array[]){
 // print a line on the TFT
 // string buffer
 char buffer[60];
-void printLine(int line_number, char* print_buffer, short text_color, short back_color){
+void printLine1(int line_number, char* print_buffer, short text_color, short back_color){
     // line number 0 to 31 
     /// !!! assumes tft_setRotation(0);
     // print_buffer is the string to print
@@ -143,10 +167,24 @@ void printLine2(int line_number, char* print_buffer, short text_color, short bac
     int v_pos;
     v_pos = line_number * 20 ;
     // erase the pixels
-    tft_fillRoundRect(0, v_pos, 239, 16, 1, back_color);// x,y,w,h,radius,color
+    tft_fillRoundRect(0, v_pos, 300, 16, 1, back_color);// x,y,w,h,radius,color
     tft_setTextColor(text_color); 
     tft_setCursor(0, v_pos);
     tft_setTextSize(2);
+    tft_writeString(print_buffer);
+}
+
+void printLine(int size, int line_number, char* print_buffer, short text_color, short back_color){
+    // line number 0 to 31 
+    /// !!! assumes tft_setRotation(0);
+    // print_buffer is the string to print
+    int v_pos;
+    v_pos = line_number * 20 ;
+    // erase the pixels
+    tft_fillRoundRect(0, v_pos, 300, 8*size, 1, back_color);// x,y,w,h,radius,color
+    tft_setTextColor(text_color); 
+    tft_setCursor(0, v_pos);
+    tft_setTextSize(size);
     tft_writeString(print_buffer);
 }
 
@@ -419,11 +457,24 @@ static PT_THREAD (protothread_timer(struct pt *pt))
         if (record_mode) {
             
             if (!prev_record_mode){
+                if (!tempo_lock){
+                    bpm = 120;
+                    sprintf(PT_send_buffer,"~ BPM %d ~\n",bpm);
+                    PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
+                }
                 sprintf(PT_send_buffer,"~ BEGIN ~\n");
                 PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
-              
+                tft_fillScreen(ILI9340_BLACK);
+                sprintf(buffer, "Tempo: %d BPM", bpm); 
+                printLine(2,1, buffer, ILI9340_WHITE, ILI9340_BLACK);
+                sprintf(buffer,"Note Name:");
+                printLine(5,3, buffer, ILI9340_YELLOW, ILI9340_BLACK);
+                sprintf(buffer,"   -");
+                printLine(5, 5, buffer, ILI9340_YELLOW, ILI9340_BLACK);
                 sprintf(buffer, "RECORDING");
-                printLine2(3, buffer, ILI9340_WHITE, ILI9340_BLACK);
+                printLine(2, 10, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
+                sprintf(buffer, "FLIP SWITCH TO STOP RECORD");
+                printLine(2, 11, buffer, ILI9340_WHITE, ILI9340_BLACK);
             }
             
             if (midi_db1_prev != midi_db1) {
@@ -444,19 +495,12 @@ static PT_THREAD (protothread_timer(struct pt *pt))
                     // Send NOTE START message
                     sprintf(PT_send_buffer,"~ START %d %d ~\n",record_time,midi_db1);
                     PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
-                  
-                    tft_setCursor(80, 20); //test
-                    tft_fillRoundRect(80, 20, 10, 16, 2, ILI9340_BLACK); //test
-                    tft_setTextColor(ILI9340_WHITE); 
-                    tft_setTextSize(2);
-                    sprintf(buffer,"%s%d", tones[midi_db1%12], octave );
-                    tft_writeString(buffer);
+                    // make this big
+                    sprintf(buffer,"   %s%d", tones[midi_db1%12], octave );
+                    printLine(5, 5, buffer, ILI9340_YELLOW, ILI9340_BLACK);
                 } else {
-                    tft_setCursor(80, 20); //test
-                    tft_fillRoundRect(80, 20, 10, 16, 2, ILI9340_BLACK); //test
-                    tft_setTextColor(ILI9340_WHITE); 
-                    tft_setTextSize(2);
-                    tft_writeString("-");
+                    sprintf(buffer,"   -");
+                    printLine(5, 5, buffer, ILI9340_YELLOW, ILI9340_BLACK);
                 }
               
               //clr_right;
@@ -478,11 +522,35 @@ static PT_THREAD (protothread_timer(struct pt *pt))
                 sprintf(PT_send_buffer,"~ END ~\n");
                 PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
                 tempo_color = ILI9340_GREEN;
-                sprintf(buffer,"Tempo: %d", bpm);
-                printLine2(2, buffer, tempo_color, ILI9340_BLACK);
-              
-                tft_fillRoundRect(0, 60, 100, 16, 1, ILI9340_BLACK); //test
+                tft_fillScreen(ILI9340_BLACK);
+                sprintf(buffer, "Note Name: -"); 
+                printLine(2,1, buffer, ILI9340_WHITE, ILI9340_BLACK);
+                sprintf(buffer,"Tempo:");
+                printLine(5,3, buffer, tempo_color, ILI9340_BLACK);
+                sprintf(buffer,"   %d BPM", bpm);
+                printLine(5, 5, buffer, tempo_color, ILI9340_BLACK);
+                sprintf(buffer, "PRESS # TO ENTER TEMPO");
+                printLine(2, 10, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
+                sprintf(buffer, "PRESS * TO CLEAR");
+                printLine(2, 11, buffer, ILI9340_WHITE, ILI9340_BLACK);
             }
+            
+            if (midi_db1_prev != midi_db1) {
+                if (midi_db1 != ZERO){
+                    tft_fillRoundRect(130, 14, 40, 30, 1, ILI9340_BLACK);// x,y,w,h,radius,color
+                    tft_setCursor(130,20);
+                    tft_setTextColor(ILI9340_WHITE); tft_setTextSize(2);
+                    sprintf(buffer, "%s%d", tones[midi_db1%12], octave); 
+                    tft_writeString(buffer);
+                } else {
+                    tft_fillRoundRect(130, 14, 40, 30, 1, ILI9340_BLACK);// x,y,w,h,radius,color
+                    tft_setCursor(130,20);
+                    tft_setTextColor(ILI9340_WHITE); tft_setTextSize(2);
+                    sprintf(buffer, "-"); 
+                    tft_writeString(buffer);
+                }
+            }
+            midi_db1_prev = midi_db1;
             
         }
         
@@ -497,25 +565,10 @@ static PT_THREAD (protothread_timer(struct pt *pt))
 static PT_THREAD (protothread_key(struct pt *pt))
 {
     PT_BEGIN(pt);
-    static int keypad, i, pattern, bpm_disp, tempo_lock, j;
+    static int pattern, bpm_disp, j;
     //tempo_lock is 0 for unlocked, 1 for locked
     
-    // order is 0 thru 9 then * ==10 and # ==11
-    // no press = -1
-    // table is decoded to natural digit order (except for * and #)
-    // with shift key codes for each key
-    // keys 0-9 return the digit number
-    // keys 10 and 11 are * adn # respectively
-    // Keys 12 to 21 are the shifted digits
-    // keys 22 and 23 are shifted * and # respectively
-    static int keytable[24]=
-    //        0     1      2    3     4     5     6      7    8     9    10-*  11-#
-            {0xd7, 0xbe, 0xde, 0xee, 0xbd, 0xdd, 0xed, 0xbb, 0xdb, 0xeb, 0xb7, 0xe7,
-    //        s0     s1    s2  s3    s4    s5    s6     s7   s8    s9    s10-* s11-#
-             0x57, 0x3e, 0x5e, 0x6e, 0x3d, 0x5d, 0x6d, 0x3b, 0x5b, 0x6b, 0x37, 0x67};
-    // bit pattern for each row of the keypad scan -- active LOW
-    // bit zero low is first entry
-    static char out_table[4] = {0b1110, 0b1101, 0b1011, 0b0111};
+
     // init the port expander
     start_spi2_critical_section;
     
@@ -529,9 +582,7 @@ static PT_THREAD (protothread_key(struct pt *pt))
     
     
     end_spi2_critical_section ;
-    
-    // the read-pattern if no button is pulled down by an output
-    #define no_button (0x70)
+   
 
       while(1) {
         // yield time
@@ -585,27 +636,36 @@ static PT_THREAD (protothread_key(struct pt *pt))
                                 bpm_array[j]=0;
                             }
                             bpm_index = 0;
+                            if (tempo_lock) {
+                                sprintf(buffer,"Tempo:");
+                                printLine(5,3, buffer, tempo_color, ILI9340_BLACK);
+                                sprintf(buffer, "PRESS # TO ENTER TEMPO");
+                                printLine(2, 10, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
+                                sprintf(buffer, "PRESS * TO CLEAR");
+                                printLine(2, 11, buffer, ILI9340_WHITE, ILI9340_BLACK);
+                            }
                             tempo_lock = 0; //unlock tempo
                         }
-       
                         if ((i==11) && !tempo_lock){
                             //cursor_pos(4,1);
-                            
                             if (bpm_disp == 0){
+                                // round rect to clear other text
                                 sprintf(buffer, "INVALID TEMPO");
-                                printLine2(3, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
+                                printLine(2, 10, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
                             }
                             else {
                                 bpm = bpm_disp;
                                 sprintf(PT_send_buffer,"~ BPM %d ~\n",bpm);
                                 PT_SPAWN(pt, &pt_DMA_output, PT_DMA_PutSerialBuffer(&pt_DMA_output) );
                                 tempo_color = ILI9340_RED;
+                                sprintf(buffer,"Tempo:");
+                                printLine(5,3, buffer, tempo_color, ILI9340_BLACK);
                                 sprintf(buffer, "READY TO RECORD");
-                                printLine2(3, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
+                                printLine(2, 10, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
                                 tempo_lock = 1;
                             }
                             sprintf(buffer, "PRESS * TO RESET TEMPO");
-                            printLine(7, buffer, ILI9340_WHITE, ILI9340_BLACK);
+                            printLine(2, 11, buffer, ILI9340_WHITE, ILI9340_BLACK);
                             
                         }
                                                 
@@ -628,10 +688,7 @@ static PT_THREAD (protothread_key(struct pt *pt))
                                     bpm_disp = 0;
                                     break;
                             }
-                            sprintf(buffer, "PRESS # TO ENTER TEMPO");
-                            printLine2(3, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
-                            sprintf(buffer, "PRESS * TO CLEAR");
-                            printLine(7, buffer, ILI9340_WHITE, ILI9340_BLACK);
+                            
                         }
 
                     }
@@ -651,13 +708,13 @@ static PT_THREAD (protothread_key(struct pt *pt))
         }
 
             // draw key number
-            if (i>-1 && i<12) {sprintf(buffer,"BPM: %d", bpm_disp);}
+            if (i>-1 && i<12) {sprintf(buffer,"   %d BPM", bpm_disp);}
             //if (i==10 ) {sprintf(buffer,"Tempo: *");}
             //if (i==11 ) sprintf(buffer,"Tempo: #");
             //if (i>11 && i<22 ) sprintf(buffer, "Tempo: shift-%d", i-12);
             //if (i==22 ) sprintf(buffer,"Tempo: shift-*");
             //if (i==23 ) sprintf(buffer,"Tempo: shift-#");
-            if (i>-1 && i<12) printLine2(2, buffer, tempo_color, ILI9340_BLACK);
+            if (i>-1 && i<12) printLine(5, 5, buffer, tempo_color, ILI9340_BLACK);
             else if (i>-1) printLine2(2, buffer, ILI9340_RED, ILI9340_BLACK);
             
             //sprintf(PT_send_buffer,"Key: %d\n",i);
@@ -773,10 +830,66 @@ void main(void) {
     tft_fillScreen(ILI9340_BLACK);
     //240x320 vertical display
     tft_setRotation(1); // Use tft_setRotation(1) for 320x240
-  
+    
+    // Welcome Screen
+    sprintf(buffer, "Welcome to \nPICcompose");
+    printLine(4, 3, buffer, ILI9340_CYAN, ILI9340_BLACK);
+    sprintf(buffer, "Press Any Key to Start");
+    printLine(2, 8, buffer, ILI9340_BLUE, ILI9340_BLACK);
+    
+    tft_fillCircle(255,125,10,ILI9340_WHITE);
+    tft_fillCircle(295,150,10,ILI9340_WHITE);
+    
+    tft_drawLine(265,125,265,55,ILI9340_WHITE);
+    tft_drawLine(266,125,266,55,ILI9340_WHITE);
+    
+    tft_drawLine(305,150,305,80,ILI9340_WHITE);
+    tft_drawLine(306,150,306,80,ILI9340_WHITE);
+    
+    tft_drawLine(265,55,305,80,ILI9340_WHITE);
+    tft_drawLine(266,56,306,81,ILI9340_WHITE);
+    tft_drawLine(267,57,307,82,ILI9340_WHITE);
+    
+    
+    
+    int press = 1;
+    while(!press){
+        for (i=0; i<4; i++) {
+            start_spi2_critical_section;
+            // scan each row active-low
+            writePE(GPIOY, out_table[i]);
+            //reading the port also reads the outputs
+            keypad  = readPE(GPIOY);
+            end_spi2_critical_section;
+            // was there a key press?
+            if((keypad & no_button) != no_button) {
+                break;
+            }
+        }
+        // search for keycode
+        if (keypad > 0){ // then button is pushed
+            for (i=0; i<24; i++){
+                if (keytable[i]==keypad) break;
+            }
+            // if invalid, two button push, set to -1
+            if (i==24) i=-1;
+        }
+        else i = -1; // no button pushed
+        
+        if(i==11){press=1;}
+    }
+
+    
     // write initial words
+    tft_fillScreen(ILI9340_BLACK);
     sprintf(buffer, "Note Name: -"); 
-    printLine2(1, buffer, ILI9340_WHITE, ILI9340_BLACK);
+    printLine(2,1, buffer, ILI9340_WHITE, ILI9340_BLACK);
+    sprintf(buffer,"Tempo:");
+    printLine(5,3, buffer, tempo_color, ILI9340_BLACK);
+    sprintf(buffer, "PRESS # TO ENTER TEMPO");
+    printLine(2, 10, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
+    sprintf(buffer, "PRESS * TO CLEAR");
+    printLine(2, 11, buffer, ILI9340_WHITE, ILI9340_BLACK);
 
     // round-robin scheduler for threads
     while (1) {
