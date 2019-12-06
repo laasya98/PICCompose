@@ -336,12 +336,6 @@ static PT_THREAD (protothread_fft(struct pt *pt))
             if(fr[sample_number]<log_min) fr[sample_number] = log_min;
         }
         
-        // timer 4 set up with prescalar=8, 
-        // hence mult reading by 8 to get machine cycles
-        //sprintf(buffer, "FFT cycles %d", (ReadTimer4())*8);
-        //printLine2(0, buffer, ILI9340_WHITE, ILI9340_BLACK);
-        
-        
         
         // Display on TFT
         int max_amplitude = 0;
@@ -568,7 +562,6 @@ static PT_THREAD (protothread_key(struct pt *pt))
     static int pattern, bpm_disp, j;
     //tempo_lock is 0 for unlocked, 1 for locked
     
-
     // init the port expander
     start_spi2_critical_section;
     
@@ -582,13 +575,20 @@ static PT_THREAD (protothread_key(struct pt *pt))
     
     
     end_spi2_critical_section ;
-   
 
       while(1) {
         // yield time
         PT_YIELD_TIME_msec(30);
         
         if (!record_mode) {
+            if (prev_record_mode){
+                tempo_lock = 0;
+                bpm_index=0;
+                bpm_disp = 0;             
+                sprintf(buffer,"   %d BPM", bpm_disp);
+                printLine(5, 5, buffer, tempo_color, ILI9340_BLACK);
+                
+            }
             for (i=0; i<4; i++) {
                 start_spi2_critical_section;
                 // scan each rwo active-low
@@ -738,8 +738,7 @@ void main(void) {
     // turns OFF UART support and debugger pin, unless defines are set
     PT_setup();
 
-    // === setup system wide interrupts  ========
-    INTEnableSystemMultiVectoredInt();
+
 
     // the ADC ///////////////////////////////////////
     
@@ -834,8 +833,8 @@ void main(void) {
     // Welcome Screen
     sprintf(buffer, "Welcome to \nPICcompose");
     printLine(4, 3, buffer, ILI9340_CYAN, ILI9340_BLACK);
-    sprintf(buffer, "Press Any Key to Start");
-    printLine(2, 8, buffer, ILI9340_BLUE, ILI9340_BLACK);
+    sprintf(buffer, "Press # to Start");
+    printLine(2, 7, buffer, ILI9340_BLUE, ILI9340_BLACK);
     
     tft_fillCircle(255,125,10,ILI9340_WHITE);
     tft_fillCircle(295,150,10,ILI9340_WHITE);
@@ -850,9 +849,20 @@ void main(void) {
     tft_drawLine(266,56,306,81,ILI9340_WHITE);
     tft_drawLine(267,57,307,82,ILI9340_WHITE);
     
+    // init the port expander
+    start_spi2_critical_section;
     
+    // PortY on Expander ports as digital outputs
+    mPortYSetPinsOut(BIT_0 | BIT_1 | BIT_2 | BIT_3);    //Set port as output
+    // PortY as inputs
+    // note that bit 7 will be shift key input, 
+    // separate from keypad
+    mPortYSetPinsIn(BIT_4 | BIT_5 | BIT_6 | BIT_7);    //Set port as input
+    mPortYEnablePullUp(BIT_4 | BIT_5 | BIT_6 | BIT_7);
     
-    int press = 1;
+    end_spi2_critical_section ;
+    
+    int press = 0;
     while(!press){
         for (i=0; i<4; i++) {
             start_spi2_critical_section;
@@ -880,12 +890,17 @@ void main(void) {
     }
 
     
+    // === setup system wide interrupts  ========
+    INTEnableSystemMultiVectoredInt();
+    
     // write initial words
     tft_fillScreen(ILI9340_BLACK);
     sprintf(buffer, "Note Name: -"); 
     printLine(2,1, buffer, ILI9340_WHITE, ILI9340_BLACK);
     sprintf(buffer,"Tempo:");
     printLine(5,3, buffer, tempo_color, ILI9340_BLACK);
+    sprintf(buffer,"   0 BPM");
+    printLine(5, 5, buffer, tempo_color, ILI9340_BLACK);
     sprintf(buffer, "PRESS # TO ENTER TEMPO");
     printLine(2, 10, buffer, ILI9340_MAGENTA, ILI9340_BLACK);
     sprintf(buffer, "PRESS * TO CLEAR");
