@@ -404,17 +404,17 @@ static PT_THREAD (protothread_fft(struct pt *pt))
 static PT_THREAD (protothread_met(struct pt *pt))
 {
     PT_BEGIN(pt);
-    mPORTASetBits(BIT_0);   //Clear bits to ensure light is off.
-    mPORTASetPinsDigitalOut(BIT_0 );    //Set port as output
-    mPORTAClearBits(BIT_0);
+    mPORTBSetBits(BIT_3);   //Clear bits to ensure light is off.
+    mPORTBSetPinsDigitalOut(BIT_3 );    //Set port as output
+    mPORTBClearBits(BIT_3);
     while(1) {
         // yield time 1 second, 60bpm
         PT_YIELD_TIME_msec(1000*30/bpm);
         
         if (record_mode) {
-            mPORTAToggleBits(BIT_0); //toggle LED
+            mPORTBToggleBits(BIT_3); //toggle LED
         }
-        else {mPORTAClearBits(BIT_0);}
+        else {mPORTBClearBits(BIT_3);}
         
         //if (midi_db1_prev != midi_db1){note_length = 0;}
         //else if (midi_db1 != 48){note_length++;}
@@ -816,6 +816,9 @@ void main(void) {
     
     // init the Z port to try other output functions
     mPortZSetPinsIn(BIT_0 | BIT_1);    //Set port as input
+  
+    mPORTBSetPinsDigitalIn(BIT_3);
+    EnablePullUpB(BIT_3);
     
     // init the threads
     PT_INIT(&pt_fft);
