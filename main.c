@@ -52,6 +52,8 @@
 #define start_spi2_critical_section INTEnable(INT_T2, 0);
 #define end_spi2_critical_section INTEnable(INT_T2, 1);
 
+#define EnablePullUpB(bits) CNPDBCLR=bits; CNPUBSET=bits;
+
 // === the fixed point macros ========================================
 typedef signed short fix14 ;
 #define multfix14(a,b) ((fix14)((((long)(a))*((long)(b)))>>14)) //multiply two fixed 2.14
