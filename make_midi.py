@@ -8,11 +8,12 @@ import os, sys
 import serial
 import time
 import datetime
+import numpy as np
 
 # TODO: make compatible with different OS
 
 # init serial connection to board, set baud rate, time out after 25 seconds
-ser = serial.Serial('/dev/cu.usbserial', 38400, timeout = 5)
+ser = serial.Serial('/dev/cu.usbserial', 38400, timeout = 120)
 
 # init track and midi file
 mid = MidiFile()
@@ -22,66 +23,114 @@ mid.tracks.append(track)
 # last time in microseconds since start time
 last_time = 0
 
+# check for octave aliasing
+last_start_note = 0
+
 # are we recording
-recording = True
+recording = False
 
 # global tempo data
-ppq = 480
+ppq = mid.ticks_per_beat
 bpm = 120
-tempo = 60000000/bpm
-
+tempo = int(60000000/bpm)
+quarter = int(ppq)
+print("Input Tempo: ")
 # listen for the input, exit if nothing received in timeout period
 while True:
    line = ser.readline(30)
    str_line = str(line).split(" ")
-   print(line, len(line))
    # if statements to send messages
-
    # Tempo adjust (assuming pre record mode)
    if "BPM" in str_line:
       bpm = int(str_line[2])
-      tempo = 60000000/bpm
+      tempo = int(60000000/bpm)
       track.append(MetaMessage("set_tempo", tempo=tempo))
+      print("TEMPO: " + str(bpm) )
 
-   # TODO: fix note timings from MCU side
    elif "START" in str_line and recording:
-      # TODO: 
-      diff = int(60000*(int(str_line[2]) - last_time)/(ppq*bpm))*40
+      # time conversion formula: ((start ms - end ms))*(1min/60000ms)(ticks/qn * qn/min)
+      ms = (int(str_line[2]) - last_time)
+      diff = int(ms*(ppq*bpm)/60000)
+      # snap to quarter note
+      diff = int(np.ceil(diff/quarter)) * quarter
+      # reset the last time
       last_time = int(str_line[2])
-      # print("note delay", diff)
+      # get the midi note:
+      note = int(str_line[3])
+
       # want notes to be consecutive unless they're actually a rest
-      if diff < 200 or diff > 10000:
+      # no more than a whole rest and no less than an quarter rest
+      if diff > 2000 or diff <= quarter:
          diff = 0
-      track.append(Message("note_on", note=int(str_line[3]), velocity=64, time=0))
+
+      # fix first note issue
+      if last_start_note == 0:
+         last_start_note = note
+
+      # prevent octave aliasing
+      if note > 60 and abs(note-last_start_note) < 12:
+         print("START note: ", note)
+         track.append(Message("note_on", note=note, velocity=64, time=diff))
+         last_start_note = note
 
    elif "STOP" in str_line and recording:
-      diff = int(60000*(int(str_line[2]) - last_time)/(ppq*bpm))*40
+      ms = (int(str_line[2]) - last_time)
+      diff = int(ms*(ppq*bpm)/60000)
+      # snap to quarter note
+      if diff < quarter and diff > (5*quarter/8):
+         diff = quarter
+      diff = int(np.ceil(diff/quarter)) * quarter
+      # reset the last time
       last_time = int(str_line[2])
-      # print("note length", diff)
-      track.append(Message("note_on", note=int(str_line[3]), velocity=0, time=diff))
+      # get the midi note
+      note = int(str_line[3])
+      if note > 60 and abs(note-last_start_note) < 12 :
+         print("STOP note: ", note)
+         track.append(Message("note_on", note=note, velocity=0, time=diff))
 
-   # adjust record mode
+   # adjust record mode, set record mode on if begin message received
    elif "BEGIN" in str_line and not recording:
+      print("Recording Started!")
       recording = True
-      break  
 
+   # stop dumping to midi if end message sent/record mode switched off
    elif "END" in str_line and recording:
       recording = False
-      break  
+      print("Recording Ended! Saving...\n")
+      # save file with timestamp
+      now = datetime.datetime.now().isoformat(' ', 'seconds').replace(" ","_")
+      now = now.replace(":","_")
+      mid.save('recordings/pic_recording_' + now + '.mid')
+
+      # open musescore
+      subprocess.call(
+         ["/usr/bin/open", "-W", "-n", "-a", "/Applications/MuseScore 3.app"]
+         )  
+
+      # restart process
+      # init track and midi file
+      mid = MidiFile()
+      track = MidiTrack()
+      mid.tracks.append(track)
+
+      # reset last time in microseconds since start time
+      last_time = 0
+      # reset octave aliasing
+      last_start_note = 0
+
+      # reset global tempo defaults
+      bpm = 120
+      tempo = int(60000000/bpm)
+
+      print("Input Tempo: ")
+
+
 
    elif line == b'':
-      print("Time out! Saving Recording.\n")
+      print("Time out! Saving Recording...\n")
       break
 
-# save file with timestamp
-now = datetime.datetime.now().isoformat(' ', 'seconds').replace(" ","_")
-now = now.replace(":","_")
-mid.save('recordings/pic_recording_' + now + '.mid')
 
-# # open musescore
-# subprocess.call(
-#     ["/usr/bin/open", "-W", "-n", "-a", "/Applications/MuseScore 3.app"]
-#     )
 
 
 

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PICcompose!</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta content="" name="keywords">
+  <meta content="" name="description">
+
+  <!-- Favicons -->
+  <link href="img/notes.png" rel="icon">
+
+  <!-- Bootstrap CSS File -->
+  <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Libraries CSS Files -->
+  <link href="lib/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  <link href="lib/animate/animate.min.css" rel="stylesheet">
+  <link href="lib/ionicons/css/ionicons.min.css" rel="stylesheet">
+  <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+  <link href="lib/lightbox/css/lightbox.min.css" rel="stylesheet">
+
+  <!-- Main Stylesheet File -->
+  <link href="css/style.css" rel="stylesheet">
+
+  <!-- =======================================================
+    Theme Name: DevFolio
+    Theme URL: https://bootstrapmade.com/devfolio-bootstrap-portfolio-html-template/
+    Author: BootstrapMade.com
+    License: https://bootstrapmade.com/license/
+  ======================================================= -->
+</head>
+
+<body id="page-top">
+
+  <!--/ Nav Star /-->
+  <nav class="navbar navbar-b navbar-trans navbar-expand-md fixed-top" id="mainNav">
+    <div class="container">
+      <a class="navbar-brand js-scroll" href="#page-top">PICcompose</a>
+      <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#navbarDefault"
+        aria-controls="navbarDefault" aria-expanded="false" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="navbar-collapse collapse justify-content-end" id="navbarDefault">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link js-scroll" href="#About">About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll" href="#HLD">High Level Design</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll" href="#Hardware">Hardware</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll" href="#Software">Software</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll" href="#Results">Results</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll" href="#Conclusions">Conclusions</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll" href="#Appendix">Appendix</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <!--/ Nav End /-->
+
+  <!--/ Intro Skew Start /-->
+  <div id="home" class="intro route bg-image" style="background-image: url(img/box.jpg)">
+    <div class="overlay-itro"></div>
+    <div class="intro-content display-table">
+      <div class="table-cell">
+        <div class="container">
+          <br>
+          <!--<p class="display-6 color-d">Hello, world!</p>-->
+          <h1 class="intro-title mb-4"><br>PICcompose<br></h1>
+          <p class="intro-subtitle"><span class="text-slider-items">Composition Assistant, End-to-end Music Annotator, Metronome and Tuner,ECE 4760 Final Project</span><strong class="text-slider"></strong></p>
+          <!-- <p class="pt-3"><a class="btn btn-primary btn js-scroll px-4" href="#about" role="button">Learn More</a></p> -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--/ Intro Skew End /-->
+
+  <!--/ About Start /-->
+  <section id="About" class="about-mf sect-pt4 route">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="box-shadow-full">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="row">
+                      <img class="about-img" src="img/flute.jpg" class="img-fluid rounded b-shadow-a" alt="Diane playing the flute">
+                      <img class="about-img" src="img/music.jpg" class="img-fluid rounded b-shadow-a" alt="Twinkle Twinkle Little Star">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="about-me pt-4 pt-md-0">
+                    <h5 class="title-left">
+                      About PICcompose
+                    </h5>
+                    <h5 class="subtitle-a">
+                        <br>An ECE 4760 Project by: <br><br>
+                        <b>Diane Sutyak</b> (dms486)  <br>
+                        <b>Tara van Nieuwstadt</b> (tev22) <br>
+                        <b>Laasya Renganathan</b> (lpr46) <br><br>
+                      </h5>
+                  <p class="lead">
+                    Composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. When brainstorming ideas for tunes, oftentimes a composer will try it out on their instrument of choice, make notes, and then translate their thoughts into a music score editing software of their choice to generate the sheet music. 
+                  </p>
+                  <p class="lead">
+                    The goal of our project is to eliminate the middleman in the music composition process by creating a tool to directly generate sheet music after playing an instrument.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--/ About End /-->
+
+  <!--/ High Level Design /-->
+  <section id="HLD" class="services-mf route">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="title-box text-center">
+            <h3 class="title-a">
+              High Level Design
+            </h3>
+            <p class="subtitle-a">
+              An overview of our overall design.
+            </p>
+            <div class="line-mf"></div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="box-shadow-full">
+              <div class="row">
+                  <p class="lead">
+                    <li> High level design: 
+                      <ul>
+                        <li>rationale and sources of your project idea</li>
+                        <li>background math</li>
+                        <li>logical structure</li>
+                        <li>hardware/software tradeoffs</li>
+                        <li>Relationship of your design to available IEEE, ISO, ANSI, DIN, and other 
+                          standards.</li>
+                        <li>Discuss existing patents, copyrights, and trademarks which are relevant 
+                          to your project.</li>
+                      </ul>
+                    </li>
+                  </p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--/ High Level Design End /-->
+
+
+  <!--/ Hardware Start /-->
+  <section id="Hardware" class="services-mf route">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="title-box text-center">
+            <h3 class="title-a">
+              Hardware
+            </h3>
+            <p class="subtitle-a">
+              The physical components of our system.
+            </p>
+            <div class="line-mf"></div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="box-shadow-full">
+              <div class="row">
+                  <p class="lead">
+                    <li> Program/hardware design: 
+                      <ul>
+                        <li>program details.  Could someone else build this based on what you 
+                        have written?</li>
+                        <li>hardware details. Could someone else build this based on what you 
+                          have written?</li>
+                        <li>Be sure to specifically reference any design or code you used from 
+                          someone else.</li>
+                        <li>Things you tried which did not work can be useful for the next people to use your techniques.</li>
+                      </ul>
+                    </li>
+                  </p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--/ Hardware End /-->
+
+  <!--/ Software Start /-->
+  <section id="Software" class="services-mf route">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="title-box text-center">
+            <h3 class="title-a">
+              Software
+            </h3>
+            <p class="subtitle-a">
+              The code behind it all.
+            </p>
+            <div class="line-mf"></div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="box-shadow-full">
+              <div class="row">
+                  <p class="lead">
+                    <li> Program/hardware design: 
+                      <ul>
+                        <li>program details.  Could someone else build this based on what you 
+                        have written?</li>
+                        <li>hardware details. Could someone else build this based on what you 
+                          have written?</li>
+                        <li>Be sure to specifically reference any design or code you used from 
+                          someone else.</li>
+                        <li>Things you tried which did not work can be useful for the next people to use your techniques.</li>
+                      </ul>
+                    </li>
+                  </p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--/ Software End /-->
+
+  <!--/ Results Start /-->
+  <section id="Results" class="services-mf route">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="title-box text-center">
+            <h3 class="title-a">
+              Results
+            </h3>
+            <p class="subtitle-a">
+              It worked!
+            </p>
+            <div class="line-mf"></div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="box-shadow-full">
+              <div class="row">
+                  <p align="center" class="lead">
+                    <li> Results of the design: <br>
+                      This is the section which is most often lacking in student projects. Be specific! <br>
+                      If you took calibration data, then show it!<br>
+                      If you have images or video, include it. <br>
+                      Show:<br>
+                      <ul>
+                        <li> speed of execution (hesitation, filcker, interactiveness, concurrency)<br>
+                          Be quantitative. Show graphs!              </li>
+                        <li>accuracy (numeric, music frequencies, video signal timing, etc)<br>
+                          Be quantitative. Show graphs!
+                        </li>
+                        <li> how you enforced safety in the design.</li>
+                        <li>interference with other people's designs (e.g. cpu noise, RF interference).</li>
+                        <li> usability by you and other people (perhaps with special needs). </li>
+                      </ul>
+                    </li>
+                  </p>
+                  
+
+              </div>
+              <p align="center" ><iframe  width="560" height="315"  src="https://www.youtube.com/embed/7qzfAA90V8g" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
+              <p align="center"> <strong>A link to our YouTube demo!</strong> </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--/ Results End /-->
+      
+
+  <!--/ Conclusions Start /-->
+  <section id="Conclusions" class="services-mf route">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="title-box text-center">
+            <h3 class="title-a">
+              Conclusions
+            </h3>
+            <p class="subtitle-a">
+              Our final thoughts.
+            </p>
+            <div class="line-mf"></div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="box-shadow-full">
+              <div class="row">
+                  <p class="lead">
+                    <li> Conclusions: 
+                      <ul>
+                        <li>Analyse your design in terms of how the results met your expectations. 
+                          <br>
+                          What might you do differently next time?</li>
+                        <li>How did your design conform to the applicable standards?</li>
+                        <li>Intellectual property considerations. 
+                          <ul>
+                            <li> Did you reuse code or someone else's design?</li>
+                            <li>Did you use code in the public domain?</li>
+                            <li>Are you reverse-engineering a design? How did you deal with 
+                              patent/trademark issues.</li>
+                            <li>Did you have to sign non-disclosure to get a sample part?</li>
+                            <li> Are there patent opportunites for your project?</li>
+                            <li>Are there publishing opportunities for your project? </li>
+                          </ul>
+                        </li>
+                        <li>Ethical considerations. Refering to the <a href="https://www.ieee.org/about/corporate/governance/p7-8.html">IEEE 
+                          Code of Ethics</a>, specifically explain how decisions you made or 
+                          actions you took in this project were consistent with this Code of 
+                          Ethics.</li>
+                        <li>Safety considerations. Were there parts of the design that could hurt anyone. <br>
+                        Specific examples might be isolation for bio-recordings, or laser-light shielding.</li>
+                        <li>Legal considerations. For example:
+                          <ul>
+                            <li>If you use a transmitter, you must discuss 
+                              the appropriate <a href="https://transition.fcc.gov/Bureaus/Engineering_Technology/Documents/bulletins/oet63/oet63rev.pdf">FCC Part 15 rules</a>. </li>
+                            <li>If you are connecting wires to yourself, you must discuss 
+                            the appropriate <a href="https://www.fda.gov/medicaldevices/deviceregulationandguidance/overview/ucm134499.htm">FDA</a> sections.</li>
+                            <li>If you are attaching to a automobile, you must discuss the appropriate state and <a href="https://en.wikipedia.org/wiki/Federal_Motor_Vehicle_Safety_Standards">Federal Motor Vehicle Standards</a>.</li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </li>
+                  </p>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--/ Conclusions End /-->
+
+  <!--/ Appendix Start /-->
+  <section id="Appendix" class="services-mf route">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="title-box text-center">
+            <h3 class="title-a">
+              Appendix
+            </h3>
+            <p class="subtitle-a">
+              Additional Data.
+            </p>
+            <div class="line-mf"></div>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="box-shadow-full">
+              <div class="row">
+                  <p class="lead">
+                    <li> <strong>Appendix A <br>
+                      <em>One of two sentences!</em><br>
+                      Either: &quot;<em>The group approves this report for inclusion on the course website.</em>&quot;<br>
+                      Or: 
+                      &quot;<em>The group does not approve this report for inclusion on the course website.</em>&quot;<br>
+                      One of two sentences! <br>
+                      Either: &quot;<em>The group approves the video for inclusion on the course youtube channel.</em>&quot; <br>
+                      Or: &quot;<em>The group does not approve the video for inclusion on the course youtube channel.</em>&quot;</strong></li>
+                    <li> Appendix with <i>commented</i> program listing 
+                    </li>
+                    <li> Appendix with schematics (you can download free software from <a href="http://expresspcb.com">expresspcb.com 
+                      </a>to draw schematics)
+                      <br>
+                    A block diagram is <em>not</em> a schematic.</li>
+                    <li>Appendix with cost details with all part numbers, vendors, and their price. This 
+                      cost will include components as described in the Budget Considerations section. 
+                    </li>
+                    <li>Appendix with a list of the <i>specific tasks</i> in the project carried 
+                      out by each team member. <br>
+                    </li>
+                    <li>References you used: 
+                      <ul>
+                        <li>Data sheets</li>
+                        <li>Vendor sites</li>
+                        <li>Code/designs borrowed from others</li>
+                        <li>Background sites/paper</li>
+                      </ul>
+                    </li>
+                  </ul>
+                  </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!--/ Appendix End /-->
+  <a href="#" class="back-to-top"><i class="fa fa-chevron-up"></i></a>
+  <div id="preloader"></div>
+
+  <!-- JavaScript Libraries -->
+  <script src="lib/jquery/jquery.min.js"></script>
+  <script src="lib/jquery/jquery-migrate.min.js"></script>
+  <script src="lib/popper/popper.min.js"></script>
+  <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+  <script src="lib/easing/easing.min.js"></script>
+  <script src="lib/counterup/jquery.waypoints.min.js"></script>
+  <script src="lib/counterup/jquery.counterup.js"></script>
+  <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+  <script src="lib/lightbox/js/lightbox.min.js"></script>
+  <script src="lib/typed/typed.min.js"></script>
+  <!-- Contact Form JavaScript File -->
+  <script src="contactform/contactform.js"></script>
+
+  <!-- Template Main Javascript File -->
+  <script src="js/main.js"></script>
+
+</body>
+</html>
