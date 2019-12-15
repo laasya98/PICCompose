@@ -783,7 +783,8 @@ void main(void) {
     // use peripherial bus clock | set sample time | set ADC clock divider
     // ADC_CONV_CLK_Tcy should work at 40 MHz.
     // ADC_SAMPLE_TIME_6 seems to work with a source resistance < 1kohm
-    #define PARAM3 ADC_CONV_CLK_PB | ADC_SAMPLE_TIME_6 | ADC_CONV_CLK_Tcy //ADC_SAMPLE_TIME_5| ADC_CONV_CLK_Tcy2
+    #define PARAM3 ADC_CONV_CLK_PB | ADC_SAMPLE_TIME_6 | ADC_CONV_CLK_Tcy 
+  //ADC_SAMPLE_TIME_5| ADC_CONV_CLK_Tcy2
 
     // define setup parameters for OpenADC10
     // set AN11 and  as analog inputs
