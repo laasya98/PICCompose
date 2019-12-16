@@ -23,6 +23,24 @@
   <!-- Main Stylesheet File -->
   <link href="css/style.css" rel="stylesheet">
 
+  <!--style things?? i don't know css-->
+  <style>
+      p {
+        text-align: justify;
+      }
+      img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      iframe {
+        display: block;
+        width: 800px;
+        height: 400px;
+        margin: 0 auto;
+        border: 0;
+      }
+  </style>
   <!-- =======================================================
     Theme Name: DevFolio
     Theme URL: https://bootstrapmade.com/devfolio-bootstrap-portfolio-html-template/
@@ -98,8 +116,8 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="row">
-                      <img class="about-img" src="img/flute.jpg" class="img-fluid rounded b-shadow-a" alt="Diane playing the flute">
-                      <img class="about-img" src="img/music.jpg" class="img-fluid rounded b-shadow-a" alt="Twinkle Twinkle Little Star">
+                  <img class="about-img" src="img/flute.jpg" class="img-fluid rounded b-shadow-a" alt="Diane playing the flute">
+                  <img class="about-img" src="img/music.jpg" class="img-fluid rounded b-shadow-a" alt="Twinkle Twinkle Little Star">
                 </div>
               </div>
               <div class="col-md-6">
@@ -107,12 +125,12 @@
                     <h5 class="title-left">
                       About PICcompose
                     </h5>
-                    <h5 class="subtitle-a">
+                    <h5>
                         <br>An ECE 4760 Project by: <br><br>
                         <b>Diane Sutyak</b> (dms486)  <br>
                         <b>Tara van Nieuwstadt</b> (tev22) <br>
                         <b>Laasya Renganathan</b> (lpr46) <br><br>
-                      </h5>
+                    </h5>
                   <p class="lead">
                     Composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. When brainstorming ideas for tunes, oftentimes a composer will try it out on their instrument of choice, make notes, and then translate their thoughts into a music score editing software of their choice to generate the sheet music. 
                   </p>
@@ -149,7 +167,6 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-              <div class="row">
                   <p class="lead">
                     <li> High level design: 
                       <ul>
@@ -164,8 +181,6 @@
                       </ul>
                     </li>
                   </p>
-
-              </div>
             </div>
           </div>
         </div>
@@ -195,22 +210,44 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-              <div class="row">
+                  <h4 >Tuner: Microphone Amplification</h4>
                   <p class="lead">
-                    <li> Program/hardware design: 
-                      <ul>
-                        <li>program details.  Could someone else build this based on what you 
-                        have written?</li>
-                        <li>hardware details. Could someone else build this based on what you 
-                          have written?</li>
-                        <li>Be sure to specifically reference any design or code you used from 
-                          someone else.</li>
-                        <li>Things you tried which did not work can be useful for the next people to use your techniques.</li>
-                      </ul>
-                    </li>
+                      sound go in microphone. need big signal to get input for adc. but also don't want non-audio noise. 
+                      chose to use sallen key. 3.3v lm386? audio amp is base.</p>
+                      <img src="img/sallenkey.png"  alt="A sallen key filter">
+                      <p class="text-center"> this is a sallen key</p>
+                      <p class="lead">
+                        also talk about the ramp thing and how we chose cut off frequencies
+                  </p>
+                
+                <h4>Controls: Keypad and Switches</h4>
+                  <p class="lead">
+                    keypads for buttons to input things. toggle switch to switch modes. resistors and stuff, 
                   </p>
 
-              </div>
+                <h4>Metronome: LED Response</h4>
+                  <p class="lead">
+                      blinky blink!
+                  </p> 
+
+                <h4>Communication: Serial Wiring</h4>
+                  <p class="lead">
+                      used stuff from lab. plugged in. </p>
+                      <img src="img/blue_usb.png"  alt="Blue wire thing from Adafruit">
+                      <p class="text-center"> this is the adafruit whatever. we used it in lab 3</p>
+                      <p class="lead">
+                      dont use the red wire!
+                  </p> 
+
+                <h4>Project Casing: ECEs Learn to CAD</h4>
+                  <p class="lead">
+                      we laser cut box. red thing. we sand and file to geth things to fit.
+                  </p> 
+
+                <h4>Hardware: Closing Thoughts</h4>
+                  <p class="lead">
+                      dont laser cut scrap plywood it catches on fire. make sure your parts fit or u have to sand them. make sure you plug in things correctly tbh.
+                  </p>  
             </div>
           </div>
         </div>
@@ -239,7 +276,6 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-              <div class="row">
                   <p class="lead">
                     <li> Program/hardware design: 
                       <ul>
@@ -253,8 +289,6 @@
                       </ul>
                     </li>
                   </p>
-
-              </div>
             </div>
           </div>
         </div>
@@ -283,8 +317,8 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-              <div class="row">
-                  <p align="center" class="lead">
+                  <p class="lead">
+                      <br>hello everyone<br>
                     <li> Results of the design: <br>
                       This is the section which is most often lacking in student projects. Be specific! <br>
                       If you took calibration data, then show it!<br>
@@ -303,10 +337,8 @@
                     </li>
                   </p>
                   
-
-              </div>
-              <p align="center" ><iframe  width="560" height="315"  src="https://www.youtube.com/embed/7qzfAA90V8g" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
-              <p align="center"> <strong>A link to our YouTube demo!</strong> </p>
+              <p><iframe  width="420" height="315"  src="https://www.youtube.com/embed/7qzfAA90V8g" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
+              <p class="text-center"> <strong>A link to our YouTube demo!</strong> </p>
             </div>
           </div>
         </div>
@@ -336,7 +368,6 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-              <div class="row">
                   <p class="lead">
                     <li> Conclusions: 
                       <ul>
@@ -372,9 +403,10 @@
                         </li>
                       </ul>
                     </li>
+                    <p class="text-center" style="font-size:larger;"> Overall, we loved this project and had a great time working on it together! Stay tuned for updates if we continue development work :)</p>
+                    <img height=500 width=750  src="img/group_pic.jpg"  alt="Tara jumps lol">
                   </p>
 
-              </div>
             </div>
           </div>
         </div>
@@ -400,46 +432,55 @@
         </div>
       </div>
       <div class="container">
-        <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-              <div class="row">
+              <p class="lead">
+                <h4 >Appendix A: Project Inclusion</h4>
                   <p class="lead">
-                    <li> <strong>Appendix A <br>
-                      <em>One of two sentences!</em><br>
-                      Either: &quot;<em>The group approves this report for inclusion on the course website.</em>&quot;<br>
-                      Or: 
-                      &quot;<em>The group does not approve this report for inclusion on the course website.</em>&quot;<br>
-                      One of two sentences! <br>
-                      Either: &quot;<em>The group approves the video for inclusion on the course youtube channel.</em>&quot; <br>
-                      Or: &quot;<em>The group does not approve the video for inclusion on the course youtube channel.</em>&quot;</strong></li>
-                    <li> Appendix with <i>commented</i> program listing 
-                    </li>
-                    <li> Appendix with schematics (you can download free software from <a href="http://expresspcb.com">expresspcb.com 
-                      </a>to draw schematics)
-                      <br>
-                    A block diagram is <em>not</em> a schematic.</li>
-                    <li>Appendix with cost details with all part numbers, vendors, and their price. This 
-                      cost will include components as described in the Budget Considerations section. 
-                    </li>
-                    <li>Appendix with a list of the <i>specific tasks</i> in the project carried 
-                      out by each team member. <br>
-                    </li>
-                    <li>References you used: 
-                      <ul>
-                        <li>Data sheets</li>
-                        <li>Vendor sites</li>
-                        <li>Code/designs borrowed from others</li>
-                        <li>Background sites/paper</li>
-                      </ul>
-                    </li>
-                  </ul>
+                    <em>The group approves this report for inclusion on the course website.</em><br>
+                    <em>The group approves the video for inclusion on the course YouTube channel.</em>
                   </p>
-              </div>
+                <h4>Appendix B: Schematics</h4>
+                  <p class="lead">
+
+                  </p>
+                <h4>Appendix C: Budget</h4>
+                  <p class="lead">
+                    
+                  </p>
+                <h4>Appendix D: Work Distribution</h4>
+                  <div class="row" style="text-align:center;">
+                    <div class="col-md-4">
+                        <img height=304 width=257 src="img/diane.png"  alt="Diane">
+                        diane did things
+                    </div>
+                    <div class="col-md-4">
+                        <img height=304 width=257 src="img/laas.png"  alt="Laasya">
+                        laasya also did things
+                    </div>
+                    <div class="col-md-4">
+                        <img height=304 width=257 src="img/tara.png"  alt="Tara">
+                        tara did things as well
+                    </div>
+                  </div>
+                  <br>
+                <h4>Appendix E: References </h4>
+                  <p>
+                    <ul>
+                      <li>Data sheets</li>
+                      <li>Vendor sites</li>
+                      <li>Code/designs borrowed from others</li>
+                      <li>Background sites/paper</li>
+                    </ul> 
+                  </p>
+                <h4>Appendix F: Python Serial to MIDI Code</h4>
+                  <script slice = 0:50 src="http://gist-it.appspot.com/https://github.com/laasya98/PICCompose/blob/master/make_midi.py"></script>
+                <span><h4>Appendix G: Main PIC Code</h4></span>
+                  <script width=70% src="http://gist-it.appspot.com/https://github.com/laasya98/PICCompose/blob/master/main.c"></script>
+              </p>
             </div>
           </div>
         </div>
-      </div>
     </div>
   </section>
   <!--/ Appendix End /-->

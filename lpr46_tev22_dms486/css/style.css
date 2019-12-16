@@ -155,6 +155,8 @@ a:hover {
 
 .subtitle-a {
   color: #4e4e4e;
+  text-align: left;
+  text-align-last: center;
 }
 
 .line-mf {
@@ -631,6 +633,7 @@ a:hover {
 .intro .intro-subtitle {
   font-size: 1.5rem;
   font-weight: 300;
+  text-align: center;
 }
 
 .intro .text-slider-items {
