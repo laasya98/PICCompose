@@ -40,6 +40,10 @@
         margin: 0 auto;
         border: 0;
       }
+      iframe {
+        display: block;
+        text-align: left;
+      }
   </style>
   <!-- =======================================================
     Theme Name: DevFolio
@@ -117,7 +121,9 @@
               <div class="col-md-6">
                 <div class="row">
                   <img class="about-img" src="img/flute.jpg" class="img-fluid rounded b-shadow-a" alt="Diane playing the flute">
+                  
                   <img class="about-img" src="img/music.jpg" class="img-fluid rounded b-shadow-a" alt="Twinkle Twinkle Little Star">
+                  
                 </div>
               </div>
               <div class="col-md-6">
@@ -210,27 +216,29 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-                  <h4 >Tuner: Microphone Amplification</h4>
+                <h3>Hardware: Overview </h3>
+                  <p class="lead">
+                      verbal description of the circut
+                  </p> 
+                  <h3 >Tuner: Microphone Amplification</h3>
                   <p class="lead">
                       sound go in microphone. need big signal to get input for adc. but also don't want non-audio noise. 
                       chose to use sallen key. 3.3v lm386? audio amp is base.</p>
                       <img src="img/sallenkey.png"  alt="A sallen key filter">
-                      <p class="text-center"> this is a sallen key</p>
+                      <p class="text-center"> this is a sallen key i think</p>
                       <p class="lead">
                         also talk about the ramp thing and how we chose cut off frequencies
                   </p>
-                
-                <h4>Controls: Keypad and Switches</h4>
+                <h3>Controls: Keypad and Switches</h3>
                   <p class="lead">
                     keypads for buttons to input things. toggle switch to switch modes. resistors and stuff, 
                   </p>
-
-                <h4>Metronome: LED Response</h4>
+                <h3>Metronome: LED Response</h3>
                   <p class="lead">
                       blinky blink!
                   </p> 
 
-                <h4>Communication: Serial Wiring</h4>
+                <h3>Communication: Serial Wiring</h3>
                   <p class="lead">
                       used stuff from lab. plugged in. </p>
                       <img src="img/blue_usb.png"  alt="Blue wire thing from Adafruit">
@@ -239,12 +247,12 @@
                       dont use the red wire!
                   </p> 
 
-                <h4>Project Casing: ECEs Learn to CAD</h4>
+                <h3>Project Casing: ECEs Learn to CAD</h3>
                   <p class="lead">
                       we laser cut box. red thing. we sand and file to geth things to fit.
                   </p> 
 
-                <h4>Hardware: Closing Thoughts</h4>
+                <h3>Hardware: Closing Thoughts</h3>
                   <p class="lead">
                       dont laser cut scrap plywood it catches on fire. make sure your parts fit or u have to sand them. make sure you plug in things correctly tbh.
                   </p>  
@@ -276,19 +284,43 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
+                <h3>Software: Overview </h3>
                   <p class="lead">
-                    <li> Program/hardware design: 
-                      <ul>
-                        <li>program details.  Could someone else build this based on what you 
-                        have written?</li>
-                        <li>hardware details. Could someone else build this based on what you 
-                          have written?</li>
-                        <li>Be sure to specifically reference any design or code you used from 
-                          someone else.</li>
-                        <li>Things you tried which did not work can be useful for the next people to use your techniques.</li>
-                      </ul>
-                    </li>
+                      c and python and stuff in between
+                  </p> 
+                <h3>Audio Processing: FFT and Note Detection</h3>
+                  <p class="lead">
+                      adapted bruce's code. picking maxes, changing bins, midi conversion etc. etc.
+                  </p> 
+
+                <h3>Audio Processing: Metronome and Timing </h3>
+                    <p class="lead">
+                        timing and blinks
+                    </p> 
+                
+                <h3>Serial: PIC thread</h3>
+                  <p class="lead">
+                      uhhhhh idk
+                  </p> 
+
+                <h3>Serial: Python and Midi</h3>
+                  <p class="lead">
+                      ok ill write this stuff later.
+                  </p> 
+
+                <h3>Controls: User Interface</h3>
+                  <p class="lead">
+                    printing pretty pictures
                   </p>
+                <h3>Controls: Keypad and Switches</h3>
+                  <p class="lead">
+                    keypads for buttons to input things. toggle switch to switch modes. resistors and stuff, 
+                  </p>
+
+                <h3>Software: Closing Thoughts</h3>
+                  <p class="lead">
+                      fft is a chonky thing.     
+                  </p>  
             </div>
           </div>
         </div>
@@ -434,7 +466,6 @@
       <div class="container">
           <div class="col-sm-12">
             <div class="box-shadow-full">
-              <p class="lead">
                 <h4 >Appendix A: Project Inclusion</h4>
                   <p class="lead">
                     <em>The group approves this report for inclusion on the course website.</em><br>
@@ -442,42 +473,81 @@
                   </p>
                 <h4>Appendix B: Schematics</h4>
                   <p class="lead">
-
+                      hello to all
                   </p>
                 <h4>Appendix C: Budget</h4>
                   <p class="lead">
-                    
+                      put a screenshot of the budget table, don't try to make one here probably.
                   </p>
                 <h4>Appendix D: Work Distribution</h4>
                   <div class="row" style="text-align:center;">
                     <div class="col-md-4">
                         <img height=304 width=257 src="img/diane.png"  alt="Diane">
+                        <p class="lead" style="text-align: center; font-size: x-large;"><strong>Diane</strong></p>
                         diane did things
                     </div>
                     <div class="col-md-4">
                         <img height=304 width=257 src="img/laas.png"  alt="Laasya">
-                        laasya also did things
+                        <p class="lead" style="text-align: center; font-size: x-large;"><strong>Laasya</strong></p>
+                        <ul style="text-align: left;">
+                          <li>Adapted FFT code from DSP page to project's use cae</li>
+                          <li>Decoded the full MIDI protocol and investigated Python libraries</li>
+                          <li>Built Python script to receive serial input from PIC, and save to file</li>
+                          <li>Storyboarded UI design and assisted with hardware casing design</li>
+                          <li>Configured website UI layout</li>
+                        </ul>
                     </div>
                     <div class="col-md-4">
                         <img height=304 width=257 src="img/tara.png"  alt="Tara">
+                        <p class="lead" style="text-align: center; font-size: x-large;"><strong>Tara</strong></p>
                         tara did things as well
                     </div>
                   </div>
                   <br>
                 <h4>Appendix E: References </h4>
-                  <p>
-                    <ul>
-                      <li>Data sheets</li>
-                      <li>Vendor sites</li>
-                      <li>Code/designs borrowed from others</li>
-                      <li>Background sites/paper</li>
-                    </ul> 
-                  </p>
-                <h4>Appendix F: Python Serial to MIDI Code</h4>
-                  <script slice = 0:50 src="http://gist-it.appspot.com/https://github.com/laasya98/PICCompose/blob/master/make_midi.py"></script>
-                <span><h4>Appendix G: Main PIC Code</h4></span>
+                  <div class="row" style="text-align:center;">
+                    <div class="col-md-3">
+                      <h5>Data Sheets</h5>
+                        <ul class="list-unstyled">
+                          <li><a style="color: #be0b0b;" href="https://www.w3schools.com">Sallen Key</a></li>
+                          <li><a style="color: #be0b0b;" href="https://www.w3schools.com">Audio Amp</a></li>
+                        </ul> 
+                    </div>
+                    <div class="col-md-3">
+                        <h5>Vendor Sites</h5>
+                        <ul class="list-unstyled">
+                          <li><a style="color: #be0b0b;" href="https://www.adafruit.com/product/1480">TFT Display</a></li>
+                          <li><a style="color: #be0b0b;" href="https://www.adafruit.com/product/1064">Electret Mic</a></li>
+                        </ul> 
+                    </div>
+                    <div class="col-md-3">
+                        <h5>Background Sites</h5>
+                        <ul class="list-unstyled">
+                          <li><a style="color: #be0b0b;" href="https://www.csie.ntu.edu.tw/~r92092/ref/midi/">Midi Protocol</a></li>
+                          <li><a style="color: #be0b0b;" href="https://mido.readthedocs.io/en/latest/index.html">Mido Library Reference</a></li>
+                        </ul> 
+                    </div>
+                    <div class="col-md-3">
+                        <h5>Design References</h5>
+                        <ul class="list-unstyled">
+                          <li><a style="color: #be0b0b;" href="http://people.ece.cornell.edu/land/courses/ece4760/PIC32/target_board.html">SECABB Board</a></li>
+                          <li><a style="color: #be0b0b;" href="http://people.ece.cornell.edu/land/courses/ece4760/PIC32/index_TFT_display.html">TFT, </a>
+                              <a style="color: #be0b0b;" href="http://people.ece.cornell.edu/land/courses/ece4760/PIC32/index_DSP.html">FFT, </a>
+                              <a style="color: #be0b0b;" href="http://people.ece.cornell.edu/land/courses/ece4760/PIC32/index_UART.html">Serial, </a>
+                          </li> 
+                          <li><a style="color: #be0b0b;" href="http://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/f2016/wm226_hd294/wm226_hd294/wm226_hd294/index.html">F16 Electronic Tuner</a></li>
+                          <li><a style="color: #be0b0b;" href="https://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/s2011/sap76_rns49/index.html">S11 Music Notator</a></li>
+                        </ul> 
+                        <br>
+                    </div>
+                    </div>
+                <h4>Appendix F: Python Serial to MIDI Code</h4><div>
+                  <script slice=0:50 style="text-align: left;" src="http://gist-it.appspot.com/https://github.com/laasya98/PICCompose/blob/master/make_midi.py"></script>
+                </div>
+                <div>
+                  <span><h4>Appendix G: Main PIC Code</h4></span>
                   <script width=70% src="http://gist-it.appspot.com/https://github.com/laasya98/PICCompose/blob/master/main.c"></script>
-              </p>
+                </div>
             </div>
           </div>
         </div>
