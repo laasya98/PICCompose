@@ -378,6 +378,9 @@
                       One side of the switch is connected to power and the other to ground, while the middle pin, the output pin, is connected through a 330Ω resistor to a GPIO pin on the port expander. 
                       The pin will then simply read 1 or 0 depending on which way the switch is flipped.
                   </p>
+                  <img src="img/switch_sch.png" alt="switch circuit">
+                  <p class="text-center"> The Switch Circuit</p>
+              
                 <h3>Metronome: LED Response</h3>
                   <p class="lead">
                       The purpose of the LED is to blink at the set tempo when in record mode. 
@@ -478,6 +481,7 @@
                       Due to the presence of some large low-frequency components, we ignore the first 15 bins, giving us a frequency detection threshold of 117Hz.
                       Once we know the strongest frequency present in the FFT, we convert the frequency to its MIDI number using the following equation, where m is the MIDI number and fm is the note frequency: 
                   </p> 
+                  <img src="img/midi_eqn.PNG"  alt="MIDI number equation">
                   <p class="lead">
                       This MIDI number is saved as the current MIDI note (the note from the most recent run of the FFT), and used later in the serial communication. 
                       We also calculate which octave the note is in from its MIDI number, which is used when we display the note name to the TFT screen.
@@ -616,7 +620,11 @@
 
                 <h3>Software: Closing Thoughts</h3>
                   <p class="lead">
-                      fft is a chonky thing.     
+                      As a whole we ran into little trouble implementing our full software structure and thread organization to execute the tasks we desired. 
+                      Although the FFT is computationally expensive, the complexity and computation time of our other threads was relatively low, which allowed everything to function smoothly from the user interface perspective with no noticeable delays in the timer and metronome threads. 
+                      We also did not run into any problems with running out of memory on the PIC32, despite the fact that increasing the FFT resolution used a lot more memory. 
+                      In addition, the python script interacted well with the UART serial interface. 
+                      The most tedious part of the software was designing the user interface, as it required us to meticulously plan out where everything should be drawn on the screen.      
                   </p>  
             </div>
           </div>
