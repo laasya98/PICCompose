@@ -270,7 +270,7 @@
                     <p class="lead">
                       A gain of 50 was chosen because it increases the microphone output signal amplitude from 15 mV to 750 mV, an amplitude usable by the PIC32’s ADC. 
                       After amplification, the signal is sent through an anti-aliasing Sallen-Key filter. 
-                      The Sallen-Key filter was implemented to have a pole at 2.5 kHz. We chose the frequency of 2.5 kHz because the FFT (done on the PIC32) sampled at 8 kHz, and 2.5 kHz corresponds to a note well out of the range of a flute. 
+                      The Sallen-Key filter was implemented to have a pole at 2.5 kHz, and Q of 1. We chose the frequency of 2.5 kHz because the FFT (done on the PIC32) sampled at 8 kHz, and 2.5 kHz corresponds to a note well out of the range of a flute. 
                       The output of the Sallen-Key filter is the input to the PIC32’s ADC. After prototyping on a normal breadboard, the circuit was ported over to the small solderboard.
                       Both op-amps used were powered by the PIC32 at 3.3V. The op-amp used was the MCP6242 because that model could be powered with voltages as low as 1.8 V. 
                   </p>
@@ -323,7 +323,8 @@
                   <p class="lead">
                       We decided to CAD and laser-cut a box to make our project more presentable. 
                       The CAD was completed using Autodesk Fusion 360. 
-                      The box was designed to expose the user only to the TFT screen, the record switch, the LED, the microphone, and the keypad. 
+                      The box was designed to expose the user only to the TFT screen, the record switch, the LED, the microphone, and the keypad.
+                      The dimensions were 22cm x 15cm x 10cm.
                       The box was laser-cut in the Cornell Rapid Prototyping Lab (RPL). 
                       The box was cut from scrap red acrylic found in the RPL.
 
