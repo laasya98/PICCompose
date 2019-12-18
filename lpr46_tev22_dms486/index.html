@@ -44,6 +44,9 @@
         display: block;
         text-align: left;
       }
+      code {
+        color: #be0b0b;
+      }
   </style>
   <!-- =======================================================
     Theme Name: DevFolio
@@ -143,7 +146,7 @@
                   <p class="lead">
                     Over the course of this project, we built a PIC32-driven solution to facilitate the music composition process.
                     We extracted frequencies from an audio source, converted them to the correct note in the MIDI format. 
-                    We then figured out note timings, and sent the data to an external laptop, which compiled the data into an actual MIDI file, saved it, and loaded it into MuseScore, our group's favorite (free) music editing software!
+                    We then figured out note timings, and sent the data to an external computer, which compiled the data into an actual MIDI file, saved it, and loaded it into MuseScore, our group's favorite (free) music editing software!
                     At the end of the project, we had a nicely packaged product that demonstrated our ability to notate simple melodies with 100% accuracy!  
                   </p>
                 </div>
@@ -177,52 +180,86 @@
           <div class="col-sm-12">
             <div class="box-shadow-full">
                 <!--/ Rationale /-->
+                <h3 >Project Rationale </h3>
                 <p class="lead">
-                    Composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. 
+                    The three of us are musicians, and we know that composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. 
                     When brainstorming ideas for tunes, oftentimes a composer will try it out on their instrument of choice, make notes, 
                     and then translate their thoughts into a music score editing software of their choice to generate the sheet music. 
                     The goal of our project was to eliminate the middleman in the music composition process by creating a tool to directly generate sheet music after playing an instrument.
                     A block diagram of our overall system is shown below.
                 </p>
                 <!--/ Background Math + MIDI explanation /-->    
+                <h3 >  Technical Background  </h3>
                 <p class="lead">
                   The core technical portions of our project were the math required for audio processing, and understanding the MIDI protocol.
                 </p> 
                   <h5 >  Audio Input  </h5>
                     <p class="lead">
-                      The raw audio input to PICcompose needed to be amplified. We chose to use a Sallen-Key filter due to its complex conjugate poles. 
+                      The raw audio input to PICcompose needed to be amplified. 
+                      We chose to use a Sallen-Key filter due to its complex conjugate poles. 
                       The corner frequency, where frequencies are cut off, of a Sallen-Key filter is calculated as follows:
-                      <br>
-                      The Q value of a Sallen-Key is calculated as follows:
-                      <br>
-                    </p>
+                      <br></p>
+                      <img  src="img/freq_eqn.png"  alt="sallen key freq eqn">
+                      <p class="text-center"> Sallen Key Corner Frequency Equation</p>
+                      <p class="lead">
+                      The Q value of a Sallen-Key is calculated as follows:<br></p>
+                      <img  src="img/q_eqn.png"  alt="q value eqn">
+                      <p class="text-center">Sallen Key Q Value Equation</p>
+                    
                   <h5 >  Note Detection  </h5>
                     <p class="lead">
-                      math about FFTs
+                        A fast Fourier transform (FFT) is used to determine the frequency of the input note. 
+                        A Fourier transform converts a signal from the time domain to the frequency domain, 
+                        and a discrete Fourier transform requires that an input time domain signal and the output frequency 
+                        domain signal are both discrete. 
+                        An FFT is an algorithm that can compute the DFT quickly. The DFT equation is shown below:
+                    </p>
+                    <img  src="img/dft.png"  alt="dft eqn">
+                    <p class="text-center"> Discrete Fourier Transform Equation</p>
+                    <p class="lead">
+                      To take an FFT of continuous time audio data, the FFT algorithm first samples the data to generate the input signal, 
+                      using the ADC on the microcontroller to get input from the microphone. 
+                      It takes the real and imaginary components of the signal at discrete time intervals and outputs a one pair of real and imaginary amplitude components corresponding to each sampled frequency. 
+                      The output frequencies are evenly spaced from 0 to the Nyquist rate, which is half of the sampling rate. N samples taken at m Hz yields n/2 discrete frequencies starting at 0 and incrementing by 2m/n Hz for each “bin”. We chose to use an 8 kHz sampling rate with 1024 samples for the FFT, giving a frequency spacing of about 8Hz. We found the bin with the max amplitude, and then used the bin spacing to convert back to a real frequency, and later to a MIDI note.
                     </p>
                   <h5 >  MIDI Overview  </h5>
                     <p class="lead">
-                        MIDI (Musical Instrument Digital Interface) is an industry standard method to store song information. This project involves creating MIDI files, which we do by writing MIDI messages to a .mid file. Each main MIDI message is encoded into bytes of the following format.
+                        MIDI (Musical Instrument Digital Interface) is an industry standard method to store song information. 
+                        This project involves creating MIDI files, which we do by writing MIDI messages to a .mid file. 
+                        Each main MIDI message is encoded into bytes of the following format.
                         <br><p class="text-center" style="font-size: x-large;">delta time | message_type | data</p><br>
                         <p class="lead">
-                        Delta time is the time (in microseconds, or “ticks”) since the last message, and the data will be two bytes long corresponding to what the message type is. For our purposes, we are only using the note_on message, which looks like this:
+                        Delta time is the time (in microseconds, or “ticks”) since the last message, and the data will be two bytes long 
+                        corresponding to what the message type is. For our purposes, we are only using the <code>note_on</code> message, which looks like this:
                         </p><br><p class="text-center" style="font-size: x-large;">delta time | 0x90 | note_number | velocity</p><br>
                         <p class="lead">
-                        Note number goes from 0 to 127 and corresponds to a note between A0 and G9. For context, a flute’s range is between B3 and C6, so MIDI fully encompasses all instruments. The velocity value corresponds to volume, for our purposes we will set this to a default intermediate value.
-                        MIDI also supports meta-messages, which relate to the file at large. This includes tempo, key signature, file name, and other similar messages. They have a structure as follows:
+                        Note number goes from 0 to 127 and corresponds to a note between A0 and G9. 
+                        For context, a flute’s range is between B3 and C6, so MIDI fully encompasses almost all instruments' range. 
+                        The velocity value corresponds to volume, for our purposes we will set this to a default intermediate value.
+                        MIDI also supports meta-messages, which relate to the file at large. 
+                        This includes tempo, key signature, file name, and other similar messages. 
+                        They have a structure as follows:
                         </p><br><p class="text-center" style="font-size: x-large;">FF | meta_type | length | data</p><br>
                         <p class="lead">
-                        The delta time in this case doesn’t matter. Since some of the data can be encoded with different numbers of bytes depending on the meta message type, a length field needs to be specified. For our project, we mainly use the set_tempo meta message, which appears like this:
+                        The delta time in this case doesn’t matter. 
+                        Since some of the data can be encoded with different numbers of bytes depending on the meta message type, 
+                        a length field needs to be specified. 
+                        For our project, we mainly use the <code>set_tempo</code> meta message, which appears like this:
                       </p><br><p class="text-center" style="font-size: x-large;">FF | 0x51 | 0x03 | TT | TT | TT</p><br><p class="lead">
-                        The tempo needs to be encoded as ticks per quarter note. The default value is 120 BPM, or a MIDI tempo of 500000. MIDI has support for many other musical encodings, but these are the features we found useful to our project.
-                        
+                        The tempo needs to be encoded as ticks per quarter note. 
+                        The default value is 120 BPM, or a MIDI tempo of 500000. 
+                        MIDI has support for many other musical encodings, but these are the features we found useful to our project.
                     </p>
                 
-                <!--/ Logical Structure /-->  
+                <!--/ Logical Structure /--> 
+                <h3 >  Logical Structure </h3> 
                 <p class="lead">
-                    A block diagram of our overall system's logical structure is shown below.
+                    A block diagram of our overall system's logical structure is shown below. Most of the processing was done on the PIC32 side.
                 </p>
+                <img width=80% height=80% src="img/block.png"  alt="block diagram">
+                  <p class="text-center"> PICcompose Block Diagram</p>
                 <!--/ HW/SW Tradeoffs /-->  
+                <h3 >Hardware/Software Tradeoffs </h3>
                 <p class="lead">
                     This project did come with some hardware-software tradeoffs. One major tradeoff involved the filtering. 
                     Only the low pass filter was implemented in pure hardware; low frequencies were actually cut off in software. 
@@ -233,15 +270,19 @@
                     However, we decided a keypad provided a little more user flexibility, and that TFT manipulation would have taken too much time to implement cleanly.
                 </p>
                 <!--/ relationship to other standards IEEE, ISO, ANSI, DIN , existing projects patents/trademarks /-->  
+                <h3 >Relationship to IEEE Standards and Existing Products</h3>
                 <p class="lead">
                     We believe that our project is fully compliant with IEEE and other standards. 
                     Our project is designed to be safe and user-friendly, and most of its electrical components are hidden inside the box. 
                     It is easy to use, with simple visual feedback and user controls. 
                     <br><br>
                     Surprisingly few automatic sheet music generators exist already. 
-                    AnthemScore, ScoreCloud, and Melody Scanner are some major ones that exist, 
+                    <a  href="https://www.lunaverus.com/">AnthemScore, </a>
+                    <a  href="https://scorecloud.com/">ScoreCloud,  </a> and 
+                    <a  href="https://melodyscanner.com/">Melody Scanner </a> are some major ones that exist, 
                     but they are paid products so we did not use any of their code when creating our project.
                     In addition, our project involves software-hardware co-design, rather than a pure software implementation that can be found in similar products.
+                    We discuss this project in relation to our competitors in the <a class="js-scroll"  href="#Conclusions">Conclusions section</a> 
                   </p>
             </div>
           </div>
@@ -274,7 +315,12 @@
             <div class="box-shadow-full">
                 <h3>Hardware: Overview </h3>
                   <p class="lead">
-                      The primary hardware components of this project are the microphone with its associated filtering and amplification circuitry, the keypad, a toggle switch and LED, and the UART serial interface. The keypad connects directly to GPIO pins on the port expander to interface with the PIC32 microcontroller. The output of the microphone’s analog circuitry is read by an ADC pin on the PIC32. 
+                      The primary hardware components of this project are the microphone with its associated filtering and amplification circuitry, 
+                      the keypad, a toggle switch and LED, and the UART serial interface. 
+                      The keypad connects directly to GPIO pins on the port expander to interface with the PIC32 microcontroller. 
+                      The output of the microphone’s analog circuitry is read by an ADC pin on the PIC32. 
+                      The toggle switch and LED also connect to GPIO pins, while the UART is connected to the UART receive and transmit pins of the board. 
+                      Our final circuitry was soldered onto a solder board, and our hardware was packed into a clean box for the user.
                   </p> 
                   <h3 >Tuner: Microphone Amplification</h3>
                   
@@ -287,28 +333,29 @@
                     <p class="lead">
                       A gain of 50 was chosen because it increases the microphone output signal amplitude from 15 mV to 750 mV, an amplitude usable by the PIC32’s ADC. 
                       After amplification, the signal is sent through an anti-aliasing Sallen-Key filter. 
-                      The Sallen-Key filter was implemented to have a pole at 2.5 kHz, and Q of 1. We chose the frequency of 2.5 kHz because the FFT (done on the PIC32) sampled at 8 kHz, and 2.5 kHz corresponds to a note well out of the range of a flute. 
+                      The Sallen-Key filter was implemented to have a pole at 2.5 kHz, and Q of 1. We chose the frequency of 2.5 kHz because 
+                      the FFT (done on the PIC32) sampled at 8 kHz, and 2.5 kHz corresponds to a note well out of the range of a flute. 
                       The output of the Sallen-Key filter is the input to the PIC32’s ADC. After prototyping on a normal breadboard, the circuit was ported over to the small solderboard.
                       Both op-amps used were powered by the PIC32 at 3.3V. The op-amp used was the MCP6242 because that model could be powered with voltages as low as 1.8 V. 
                   </p>
                       
                       <div class="row">
                           <div class="col-md-6">
-                              <img  src="img/amp_out.png"  alt="A sallen key filter">
+                              <img  src="img/amp_out.png"  alt="amplifier signal out">
                               <p class="text-center"> The Amplifier Output Signal</p>
                           </div>
                           <div class="col-md-6">
-                              <img style="height: 80%; width: 80%" src="img/amp_fft.png"  alt="A sallen key filter">
+                              <img style="height: 80%; width: 80%" src="img/amp_fft.png"  alt="amplifier fft out">
                               <p class="text-center"> The Amplifier Output FFT</p>
                           </div>
                       </div>
                       <div class="row">
                           <div class="col-md-6">
-                              <img  src="img/amp_out.png"  alt="A sallen key filter">
+                              <img  src="img/filter_out.png"  alt="filter out">
                               <p class="text-center"> The Filter Output Signal</p>
                           </div>
                           <div class="col-md-6">
-                              <img  src="img/filter_fft.png"  alt="A sallen key filter">
+                              <img  src="img/filter_fft.png"  alt="filter fft out">
                               <p class="text-center"> The Filter Output FFT</p>
                           </div>
                       </div>
@@ -316,8 +363,12 @@
                       
                 <h3>Controls: Keypad and Switches</h3>
                   <p class="lead">
-                    keypads for buttons to input things. toggle switch to switch modes. resistors and stuff, 
+                      The keypad has four row pins and three column pins, and when a button is pressed it closes a switch between the pins corresponding to the column and row that the pressed button is in. 
+                      We used the port expander on the board to interface with the keypad, and used the SPI bus to read from and write to the GPIO pins in port Y. 
+                      We connected the three column pins to GPIO pins Y4 - Y6, and the four row pins through 330Ω resistors to GPIO pins Y0 - Y3.
                   </p>
+                  <img src="img/keypad_sch.png"  alt="keypad circuit">
+                  <p class="text-center"> The Keypad Configuration</p>
                 <h3>Metronome: LED Response</h3>
                   <p class="lead">
                       The purpose of the LED is to blink at the set tempo when in record mode. 
@@ -393,36 +444,95 @@
             <div class="box-shadow-full">
                 <h3>Software: Overview </h3>
                   <p class="lead">
-                      c and python and stuff in between
+                      Our software components involved both a ProtoThreads C implementation running on the PIC32, as well as a Python script running on an external computer. 
+                      In the C code, we had an FFT function implementation, which an FFT thread would call. 
+                      That thread found the peak frequency from the FFT, calculated MIDI number and octave. 
+                      A metronome thread toggled an LED at a user-input tempo, thanks to a variable yield time, and a timer thread running every 1ms updated tft screen transitioning in and out of “record” mode, 
+                      displayed the note currently being played to the TFT screen, and sent serial note information to the external computer. 
+                      Additionally, we included a keypad thread which read input from the keypad, handled some locking, in addition to other user inputs. 
+                      The main C function set up all of these threads and displayed an intro screen welcoming the user to PICcompose. 
+                      On the Python side, the serial data sent over from the PIC is converted to MIDI messages and saved to a file. 
+                      Finally, a subprocess call is made to open up MuseScore where the recorded MIDI file can be displayed!
                   </p> 
                 <h3>Audio Processing: FFT and Note Detection</h3>
                   <p class="lead">
                       adapted bruce's code. picking maxes, changing bins, midi conversion etc. etc.
                   </p> 
 
-                <h3>Audio Processing: Metronome and Timing </h3>
-                    <p class="lead">
-                        timing and blinks
-                    </p> 
-                
-                <h3>Serial: PIC thread</h3>
+                <h3>Audio Processing: Metronome and Timing Threads</h3>
                   <p class="lead">
-                      uhhhhh idk
+                      An entire thread was dedicated to the metronome aspect of record mode. 
+                      The metronome thread was responsible for blinking the LED at the user-set tempo. 
+                      To implement this, the frequency of the metronome was changed every time the tempo was set. 
+                      During this thread, the LED would toggle. By using the bpm to determine the thread’s yield time, 
+                      we were able to coordinate the tempo to the frequency at which the thread runs and 
+                      therefore the frequency at which the LED toggles. <br><br>
+                      The timing thread was primarily responsible for sending the MIDI numbers, via serial communication, 
+                      to the external computer. 
+                      This thread runs every millisecond, and revolves around whether the system is in record mode. 
+                      While in record mode, whenever a note starts or stops, this thread sends a serial message over 
+                      UART to the listening Python script containing the note’s MIDI number and the millisecond time stamp. 
+                      It does so by saving the previous note’s MIDI number as well as the current one and comparing these 
+                      to each other as well as the “zero” frequency, which is the frequency registered by the FFT 
+                      when no note is being played. 
+                      The UART messages are sent by spawning the thread <code>PT_DMA_PutSerialBuffer</code>. 
+                      The thread increments the recording time each time the thread executes in record mode. 
+                      This thread also prints the name of the note being played to the TFT display, 
+                      both in record mode and out, and re-prints the whole TFT display when the system transitions into and out of record mode.
+
                   </p> 
 
                 <h3>Serial: Python and MIDI</h3>
                   <p class="lead">
-                      We used a Python script in order to generate the actual MIDI files by listening for serial inputs, primarily using a library called mido for MIDI parsing and the pySerial library to read in the serial stream. The first thing the script does is initialize a MidiFIle object and fill it with the default data (common between all MIDI files) and establish a serial connection by listening at the 38400 baud rate. On the computer end, that connection involved downloading the Prolific drivers for the UART cable, which can be found 
+                      We used a Python script in order to generate the actual MIDI files by listening for serial inputs, primarily using a library called mido for MIDI parsing and the pySerial library to read in the serial stream. 
+                      The first thing the script does is initialize a <code>MidiFIle</code> object and fill it with the default data (common between all MIDI files) 
+                      and establish a serial connection by listening at the 38400 baud rate. 
+                      On the computer end, that connection involved downloading the Prolific drivers for the UART cable, which can be found 
                       <a style="color:rgb(107, 102, 102)" href="http://www.prolific.com.tw/US/ShowProduct.aspx?p_id=229&pcid=41"><strong>here</strong></a>
-                      for macOS.  A few default global values are also set, such as a serial timeout length, whether or not the system was in record mode, and some tempo-related data. From here, an infinite while loop was used to process the serial stream. When a command is sent over by the PIC, the script splits the message using spaces as delimiters and saves it in a message array. The loop then goes through a series of cases depending on what is contained in the message. <br>
-                      <br>The five valid serial messages begin with “BPM”, “BEGIN”, “START”, “STOP”, and “END”. “BPM” was used to set the tempo, “BEGIN” and “END” were used to define the recording interval, and “START” and “STOP” were used for individual note length and value determination. If the message contains “BPM”, the next value in the array is assumed to be a tempo in beats per minute that the user input from the keypad. That value was saved as a global variable, which all note length calculations used, and also written to the MidiFile object. If the script received a message with “BEGIN” in it, the system was put into record mode by setting the recording global variable to True.
-                      <br><br>The “START” and “STOP” messages performed similar functions by writing MIDI bytes to the MidiFile object corresponding to when a note started and stopped. In the split array, following the “START” or “STOP” keywords, two pieces of information were sent over by the PIC: MIDI note and global time in milliseconds. When writing out the command in MIDI bytes, four numbers are required (delta time, MIDI message type, note number, velocity). We could directly use the note number, and a default value for velocity, and the same MIDI message type for all notes (“note_on”). However, we needed to perform some additional processing to get the delta time value required. MIDI records global time using microseconds, or “ticks.” and the PPQ (ticks per quarter note) is stored as a default (480) for MIDI tracks created with mido. Both “START” and “STOP” messages required a delta time (that’s how rests are encoded), so we could calculate them similarly using the following formula:
+                      for macOS.  A few default global values are also set, such as a serial timeout length, 
+                      whether or not the system was in record mode, and some tempo-related data. 
+                      From here, an infinite while loop was used to process the serial stream. When a command is sent over by the PIC, 
+                      the script splits the message using spaces as delimiters and saves it in a message array. 
+                      The loop then goes through a series of cases depending on what is contained in the message. <br>
+                      <br><br>The five valid serial messages begin with “BPM”, “BEGIN”, “START”, “STOP”, and “END”. 
+                      “BPM” was used to set the tempo, “BEGIN” and “END” were used to define the recording interval, 
+                      and “START” and “STOP” were used for individual note length and value determination. 
+                      If the message contains “BPM”, the next value in the array is assumed to be a tempo in beats per minute 
+                      that the user input from the keypad. 
+                      That value was saved as a global variable, which all note length calculations used, and also written to the <code>MidiFile</code> object.
+                      If the script received a message with “BEGIN” in it, the system was put into record mode by setting the 
+                      recording global variable to <code>True</code>.<br><br>
+                      The “START” and “STOP” messages performed similar functions by writing MIDI bytes to the <code>MidiFile</code> object 
+                      corresponding to when a note started and stopped. 
+                      In the split array, following the “START” or “STOP” keywords, two pieces of information were sent over by the PIC: 
+                      MIDI note and global time in milliseconds. 
+                      When writing out the command in MIDI bytes, four numbers are required (delta time, MIDI message type, note number, velocity). 
+                      We could directly use the note number, and a default value for velocity, and the same MIDI message type for all notes (<code>note_on</code>). 
+                      However, we needed to perform some additional processing to get the delta time value required. 
+                      MIDI records global time using microseconds, or “ticks.” and the PPQ (ticks per quarter note) 
+                      is stored as a default (480) for MIDI tracks created with mido. 
+                      Both “START” and “STOP” messages required a delta time (that’s how rests are encoded), so we could calculate them similarly 
+                      using the following formula:
                       <br>
                   </p><p class="lead" style="text-align:center;">tick_diff = (start ms - last ms) * (1min / 60000ms) * (ticks/qn * qn/min) </p>
                   <p class="lead">
-                      Essentially, we found the difference in milliseconds between the current note and the last note, converted that time to minutes, and then used the BPM (qn/min) and PPQ (ticks/qn) to get the note length in ticks, and wrote that number to the MidiFile object. Unfortunately, this system turned out to be too accurate, and resulted in random rests and note blips of sixteenth note value or less. To mitigate this, we reduced our “resolution” to quarter note lengths, i.e. the shortest note length possible was a quarter note. Messages sent with calculated delta time values of less than half a quarter note were ignored, everything else was “snapped” to a quarter note length using integer division and rounding. Apart from note length determination, some additional filtering (such as removing consecutive notes with an octave or more of a difference) was done in the loop.
+                      Essentially, we found the difference in milliseconds between the current note and the last note, 
+                      converted that time to minutes, and then used the BPM (qn/min) and PPQ (ticks/qn) to get the note length in ticks, 
+                      and wrote that number to the <code>MidiFile</code> object. 
+                      Unfortunately, this system turned out to be too accurate, and resulted in random rests 
+                      and note blips of sixteenth note value or less. To mitigate this, we reduced our “resolution” to quarter note lengths, 
+                      i.e. the shortest note length possible was a quarter note. 
+                      Messages sent with calculated delta time values of less than half a quarter note were ignored, 
+                      everything else was “snapped” to a quarter note length using integer division and rounding. 
+                      Apart from note length determination, some additional filtering (such as removing consecutive notes with an octave or 
+                      more of a difference) was done in the loop.
                       <br><br>
-                      Finally, when the script received an “END” message, the recording global variable was set to False, and the MidiFile object was saved to a .mid file with the name “recording”+the current date and time in ISO format. The Python script then triggered a subprocess call that would open up the MuseScore application on the computer, where a user could open up the created MIDI file. Once the MuseScore application was closed, the loop could be restarted with the defaults reset, in order to make a new recording.
+                      Finally, when the script received an “END” message, the recording global variable was set to <code>False</code>, 
+                      and the <code>MidiFile</code> object was saved to a .mid file with the name “recording”+the current date and time in ISO format. 
+                      The Python script then triggered a subprocess call that would open up the MuseScore application on the computer, 
+                      where a user could open up the created MIDI file. 
+                      Once the MuseScore application was closed, the loop could be restarted with the defaults reset, 
+                      in order to make a new recording.
                   </p> 
 
                 <h3>Controls: User Interface</h3>
@@ -459,10 +569,25 @@
                   </div>
                 <h3>Controls: Keypad and Switches</h3>
                   <p class="lead">
-                      The purpose of the keypad is to take user input to leave the start-up screen, and to take user input for setting the tempo. A keypad thread was written to implement this functionality, and starts with a finite state machine that debounces key presses. Keys are debounced to prevent a single key press from getting interpreted as multiple key presses. After the keys are debounced, this thread interprets what key was pressed, and what action to take accordingly. If the user is in tempo input mode and the tempo has not been entered (via the press of the # button), this thread displays the key pressed on the TFT display in green. This thread blocks users from entering tempos that are over three digits long. If a user attempts to continue entering digits beyond three, these digits do not appear on the TFT display. 
-                      <br><br>Once a user has entered their desired tempo, they press the # button. The tempo is then locked, and further key presses are ignored unless the * button is pressed. The * button allows users to clear and reset the tempo.
-                      <br><br>The purpose of the switch was to switch between tempo input mode and record mode. When the switch is flipped from tempo input mode to record mode, the LED begins blinking and the Python script begins listening for messages. If a tempo has been set by the user, the recording tempo is that user-set tempo. If the user did not enter a tempo, the recording tempo defaults to 120 BPM. 
-                      <br><br>When the switch is flipped from record mode to tempo input mode, the previous tempo is cleared. The user can then set a new tempo for the next recording. 
+                      The purpose of the keypad is to take user input to leave the start-up screen, and to take user input for setting the tempo. 
+                      A keypad thread was written to implement this functionality, and starts with a finite state machine that debounces key presses. 
+                      Keys are debounced to prevent a single key press from getting interpreted as multiple key presses. 
+                      After the keys are debounced, this thread interprets what key was pressed, and what action to take accordingly. 
+                      If the user is in tempo input mode and the tempo has not been entered (via the press of the # button), 
+                      this thread displays the key pressed on the TFT display in green. 
+                      This thread blocks users from entering tempos that are over three digits long. 
+                      If a user attempts to continue entering digits beyond three, these digits do not appear on the TFT display. 
+                      <br><br>
+                      Once a user has entered their desired tempo, they press the # button. 
+                      The tempo is then locked, and further key presses are ignored unless the * button is pressed. 
+                      The * button allows users to clear and reset the tempo. <br><br>
+                      The purpose of the switch was to switch between tempo input mode and record mode. 
+                      When the switch is flipped from tempo input mode to record mode, the LED begins blinking and the Python script 
+                      begins listening for messages. 
+                      If a tempo has been set by the user, the recording tempo is that user-set tempo. 
+                      If the user did not enter a tempo, the recording tempo defaults to 120 BPM.<br><br>
+                      When the switch is flipped from record mode to tempo input mode, the previous tempo is cleared. 
+                      The user can then set a new tempo for the next recording. 
                    </p>
 
                 <h3>Software: Closing Thoughts</h3>
@@ -511,7 +636,10 @@
                       with 100% accuracy in both note detection as well as note lengths. 
                       Our note resolution in the flute’s octave range is also error-free for a short chromatic scale. 
                       Screenshots from our notated scores are shown below: </p>
-                      
+                      <img  src="img/chromatic.png"  alt="chromatic scale">
+                      <p class="text-center"> A Short Chromatic Scale</p>
+                      <img  src="img/ttls.png"  alt="filter fft out">
+                      <p class="text-center"> Twinkle Twinkle Little Star</p>
                       <p class="lead">
                       These were recorded at two different tempos in our demo, with no change to accuracy. 
                       We anticipate our notation accuracy will decrease with more complex music, but have not verified this yet. 
@@ -520,10 +648,7 @@
                       <br><br>
                       We enforced safety in the design by encapsulating our electronic components in a box. The box prevents a user from poking around and potentially get shocked by any of our circuitry. 
                       Our project did not cause or experience interference from other people’s designs. 
-                      
                   </p>
-                  
-              
             </div>
           </div>
         </div>
@@ -582,15 +707,18 @@
                       <br><br>
                       There are potentially publication or patent opportunities associated with this project. 
                       Automatic sheet music generators exist, but they are very few in number. 
-                      Some popular implementations include AnthemScore, ScoreCloud, and Melody Scanner. 
+                      Some popular implementations include 
+                      <a  href="https://www.lunaverus.com/">AnthemScore, </a>
+                      <a  href="https://scorecloud.com/">ScoreCloud,  </a> and 
+                      <a  href="https://melodyscanner.com/">Melody Scanner.</a> 
                       However, our project is distinct from them in two major ways. 
-                      First, since we are working with a PIC32 microcontroller, <strong>our project is a software-hardware hybrid implementation.</strong>
+                      First, since we are working with a PIC32 microcontroller, <strong><u>our project is a software-hardware hybrid implementation.</u></strong>
                       Other sheet music generators are a pure software implementation. 
                       Because of that, those products support robust calculations including some machine learning tactics. 
                       Our only uses a software implementation of an FFT, making it much faster and executable in an embedded environment.
                       Given that it includes hardware in its implementation, PICcompose only needs to be purchased once (if productized). 
                       The other products are typically subscription based, making them financially inaccessible to some people. 
-                      The second major difference is that our project is <strong>cross-platform compatible,</strong> thanks to the MIDI format we export. 
+                      The second major difference is that our project is <strong><u>cross-platform compatible,</u></strong> thanks to the MIDI format we export. 
                       The other products typically have a sheet music editor built into their software. 
                       Ours can be used directly with pre-existing notation softwares such as MuseScore and Finale, 
                       meaning that a composer could use our product without changing their workflow. 
@@ -652,24 +780,33 @@
                             <li>Design the box CAD and oversaw the laser-cutting</li>
                             <li>Configured the physical user interface (with keypad, toggle switch, and LED)</li>
                             <li>Helped design the PIC-side MIDI message serial interface</li>
-                            <li>Improved the audio filtering in software</li>
+                            <li>Improved audio filtering in software</li>
+                            <li>Wrote the final report</li>
                           </ul>
                     </div>
                     <div class="col-md-4">
                         <img height=304 width=257 src="img/laas.png"  alt="Laasya">
                         <p class="lead" style="text-align: center; font-size: x-large;"><strong>Laasya</strong></p>
                         <ul style="text-align: left;">
-                          <li>Adapted FFT code from DSP page to project's use cae</li>
+                          <li>Adapted FFT code from DSP page to project's use case</li>
                           <li>Decoded the full MIDI protocol and investigated Python libraries</li>
                           <li>Built Python script to receive serial input from PIC, and save to file</li>
                           <li>Storyboarded UI design and assisted with hardware casing design</li>
                           <li>Configured website UI layout</li>
+                          <li>Wrote the final report</li>
                         </ul>
                     </div>
                     <div class="col-md-4">
                         <img height=304 width=257 src="img/tara.png"  alt="Tara">
                         <p class="lead" style="text-align: center; font-size: x-large;"><strong>Tara</strong></p>
-                        tara did things as well
+                        <ul style="text-align: left;">
+                            <li>Assisted in designing and testing microphone circuitry</li>
+                            <li>Adapted sample FFT code and note-decoding calculations</li>
+                            <li>Implemented timing and protocol of serial communication messages</li>
+                            <li>Helped design and implement the final display user interface</li>
+                            <li>Placed and set up everything inside the box</li>
+                            <li>Wrote the final report</li>
+                          </ul>
                     </div>
                   </div>
                   <br>
@@ -678,8 +815,9 @@
                     <div class="col-md-3">
                       <h5>Data Sheets</h5>
                         <ul class="list-unstyled">
-                          <li><a style="color: #be0b0b;" href="https://www.w3schools.com">Sallen Key</a></li>
-                          <li><a style="color: #be0b0b;" href="https://www.w3schools.com">Audio Amp</a></li>
+                          <li><a style="color: #be0b0b;" href="https://www.electronics-tutorials.ws/filter/sallen-key-filter.html">Sallen Key</a></li>
+                          <li><a style="color: #be0b0b;" href="http://sim.okawa-denshi.jp/en/OPstool.php">Sallen Key Calculator</a></li>
+                          
                         </ul> 
                     </div>
                     <div class="col-md-3">
@@ -687,6 +825,7 @@
                         <ul class="list-unstyled">
                           <li><a style="color: #be0b0b;" href="https://www.adafruit.com/product/1480">TFT Display</a></li>
                           <li><a style="color: #be0b0b;" href="https://www.adafruit.com/product/1064">Electret Mic</a></li>
+                          <li><a style="color: #be0b0b;" href="https://www.onsemi.com/pub/Collateral/LF353-D.pdf">Audio Amp</a></li>
                         </ul> 
                     </div>
                     <div class="col-md-3">
