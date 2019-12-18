@@ -520,40 +520,51 @@
           <div class="col-sm-12">
             <div class="box-shadow-full">
                   <p class="lead">
-                    <li> Conclusions: 
-                      <ul>
-                        <li>Analyse your design in terms of how the results met your expectations. 
-                          <br>
-                          What might you do differently next time?</li>
-                        <li>How did your design conform to the applicable standards?</li>
-                        <li>Intellectual property considerations. 
-                          <ul>
-                            <li> Did you reuse code or someone else's design?</li>
-                            <li>Did you use code in the public domain?</li>
-                            <li>Are you reverse-engineering a design? How did you deal with 
-                              patent/trademark issues.</li>
-                            <li>Did you have to sign non-disclosure to get a sample part?</li>
-                            <li> Are there patent opportunites for your project?</li>
-                            <li>Are there publishing opportunities for your project? </li>
-                          </ul>
-                        </li>
-                        <li>Ethical considerations. Refering to the <a href="https://www.ieee.org/about/corporate/governance/p7-8.html">IEEE 
-                          Code of Ethics</a>, specifically explain how decisions you made or 
-                          actions you took in this project were consistent with this Code of 
-                          Ethics.</li>
-                        <li>Safety considerations. Were there parts of the design that could hurt anyone. <br>
-                        Specific examples might be isolation for bio-recordings, or laser-light shielding.</li>
-                        <li>Legal considerations. For example:
-                          <ul>
-                            <li>If you use a transmitter, you must discuss 
-                              the appropriate <a href="https://transition.fcc.gov/Bureaus/Engineering_Technology/Documents/bulletins/oet63/oet63rev.pdf">FCC Part 15 rules</a>. </li>
-                            <li>If you are connecting wires to yourself, you must discuss 
-                            the appropriate <a href="https://www.fda.gov/medicaldevices/deviceregulationandguidance/overview/ucm134499.htm">FDA</a> sections.</li>
-                            <li>If you are attaching to a automobile, you must discuss the appropriate state and <a href="https://en.wikipedia.org/wiki/Federal_Motor_Vehicle_Safety_Standards">Federal Motor Vehicle Standards</a>.</li>
-                          </ul>
-                        </li>
-                      </ul>
-                    </li>
+                      Our project met most of our expectations. 
+                      We expected our project to take audio from a user and notate that audio. 
+                      We could successfully demonstrate this. 
+                      The only expectation that we did not meet was the notation of notes shorter than a quarter note. 
+                      When we initially tested our project, we discovered that our project was too accurate in that it could pick up and notate artifacts caused by tonguing, vibrato, note decay, etc. 
+                      We could see this affect our score; undesired 32nd and 64th notes would appear that notated our every user inaccuracy. 
+                      To resolve this issue, we chose to decrease the note length resolution in the Python script.
+                      A note would only be notated as a quarter note if that note were detected for over half the quarter length period, 
+                      as designated by the tempo. With this fix, our accuracy was immensely improved.
+                      <br><br>
+                      With that being said, we could further improve this project by modifying how we resolve our notes. 
+                      Currently, our project only supports quarter note level resolution so the shortest note we can notate is a quarter note. 
+                      However, we can resolve quarter notes at very fast tempos. 
+                      An eighth note at 60 BPM is the same as quarter note at 120 BPM, and we are able resolve quarter notes at both tempos. 
+                      Because of this, we believe that with some changes in how note resolution is calculated and further fine-tuning in the code, 
+                      we could visually increase our scope to faster notes.
+                      <br><br>
+                      Another design improvement would be to implement a Bluetooth connection. 
+                      While there was nothing inherently wrong with using a serial interface, 
+                      a Bluetooth connection would provide a user with more convenience. 
+                      The use would be able to pick up our project and place it in different locations without carrying a laptop with them. 
+                      <br><br>
+                      One great aspect of our project is that it conforms to the universal standard of MIDI. 
+                      MIDI files may be opened in almost all available score-editing softwares. 
+                      We opened our scores in MuseScore3, however a user could choose to open their scores in other software such as Sibelius or Finale. 
+                      <br><br>
+                      There are potentially publication or patent opportunities associated with this project. 
+                      Automatic sheet music generators exist, but they are very few in number. 
+                      Some popular implementations include AnthemScore, ScoreCloud, and Melody Scanner. 
+                      However, our project is distinct from them in two major ways. 
+                      First, since we are working with a PIC32 microcontroller, <strong>our project is a software-hardware hybrid implementation.</strong>
+                      Other sheet music generators are a pure software implementation. 
+                      Because of that, those products support robust calculations including some machine learning tactics. 
+                      Our only uses a software implementation of an FFT, making it much faster and executable in an embedded environment.
+                      Given that it includes hardware in its implementation, PICcompose only needs to be purchased once (if productized). 
+                      The other products are typically subscription based, making them financially inaccessible to some people. 
+                      The second major difference is that our project is <strong>cross-platform compatible,</strong> thanks to the MIDI format we export. 
+                      The other products typically have a sheet music editor built into their software. 
+                      Ours can be used directly with pre-existing notation softwares such as MuseScore and Finale, 
+                      meaning that a composer could use our product without changing their workflow. 
+                      These aspects of our project are relatively novel, and possibly patent-worthy with further development.
+                      <br><br>
+                      During the design, construction, and use of this project, we abided by the IEEE Code of Ethics. 
+                      We also did not have any safety concerns or legal considerations throughout the process. 
+                      <br><br>
                     <p class="text-center" style="font-size:larger;"> Overall, we loved this project and had a great time working on it together! Stay tuned for updates if we continue development work :)</p>
                     <img height=500 width=750  src="img/group_pic.jpg"  alt="Tara jumps lol">
                   </p>
