@@ -135,15 +135,15 @@
                         <br>An ECE 4760 Project by: <br><br>
                         <b>Diane Sutyak</b> (dms486)  <br>
                         <b>Tara van Nieuwstadt</b> (tev22) <br>
-                        <b>Laasya Renganathan</b> (lpr46) <br><br>
+                        <b>Laasya Renganathan</b> (lpr46) <br>
                     </h5>
                   <p class="lead">
-                    PICcompose is a tool that converts raw audio data into an editable music score. 
+                    <strong style="color:#be0b0b">PICcompose</strong> is a tool that converts raw audio data into an editable music score! 
                     </p>
                   <p class="lead">
                     Over the course of this project, we built a PIC32-driven solution to facilitate the music composition process.
                     We extracted frequencies from an audio source, converted them to the correct note in the MIDI format. 
-                    We then figured out note timings, and sent the data to an external laptop, which compiled the data into an actual MIDI file, saved it, and loaded it into our group's favorite (free) music editing software!
+                    We then figured out note timings, and sent the data to an external laptop, which compiled the data into an actual MIDI file, saved it, and loaded it into MuseScore, our group's favorite (free) music editing software!
                     At the end of the project, we had a nicely packaged product that demonstrated our ability to notate simple melodies with 100% accuracy!  
                   </p>
                 </div>
@@ -166,7 +166,7 @@
               High Level Design
             </h3>
             <p class="subtitle-a">
-              An overview of our overall design.
+              An overview of our project.
             </p>
             <div class="line-mf"></div>
           </div>
@@ -177,25 +177,54 @@
           <div class="col-sm-12">
             <div class="box-shadow-full">
                 <!--/ Rationale /-->
-                  <p class="lead">
-                      Composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. 
-                      When brainstorming ideas for tunes, oftentimes a composer will try it out on their instrument of choice, make notes, 
-                      and then translate their thoughts into a music score editing software of their choice to generate the sheet music. 
-                      The goal of our project was to eliminate the middleman in the music composition process by creating a tool to directly generate sheet music after playing an instrument.
-                 
+                <p class="lead">
+                    Composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. 
+                    When brainstorming ideas for tunes, oftentimes a composer will try it out on their instrument of choice, make notes, 
+                    and then translate their thoughts into a music score editing software of their choice to generate the sheet music. 
+                    The goal of our project was to eliminate the middleman in the music composition process by creating a tool to directly generate sheet music after playing an instrument.
+                    A block diagram of our overall system is shown below.
+                </p>
                 <!--/ Background Math + MIDI explanation /-->    
-                    <li> High level design: 
-                      <ul>
-                        <li>rationale and sources of your project idea</li>
-                        <li>background math</li>
-                        <li>logical structure</li>
-                        <li>hardware/software tradeoffs</li>
-                        <li>Relationship of your design to available IEEE, ISO, ANSI, DIN, and other 
-                          standards.</li>
-                        <li>Discuss existing patents, copyrights, and trademarks which are relevant 
-                          to your project.</li>
-                      </ul>
-                    </li>
+                <p class="lead">
+                  The core technical portions of our project were the math required for audio processing, and understanding the MIDI protocol.
+                </p> 
+                  <h5 >  Audio Input  </h5>
+                    <p class="lead">
+                      math about the sallen key filter
+                    </p>
+                  <h5 >  Note Detection  </h5>
+                    <p class="lead">
+                      math about FFTs
+                    </p>
+                  <h5 >  MIDI Overview  </h5>
+                    <p class="lead">
+                      how do midi bytes work
+                    </p>
+                
+                <!--/ Logical Structure /-->  
+                <p class="lead">
+                    A block diagram of our overall system's logical structure is shown below.
+                </p>
+                <!--/ HW/SW Tradeoffs /-->  
+                <p class="lead">
+                    This project did come with some hardware-software tradeoffs. One major tradeoff involved the filtering. 
+                    Only the low pass filter was implemented in pure hardware; low frequencies were actually cut off in software. 
+                    We could have built a band pass filter in hardware, but figured the software implementation might be cleaner.
+                    Additionally, we use a keypad as part of the user interface. 
+                    With some more advanced TFT printing techniques, we may have been able to reduce the number of buttons/change how the tempo settings were done.
+                    The keypad could have been swapped out for + and - buttons to increase/decrease tempo, which would have taken up less space visually.
+                    However, we decided a keypad provided a little more user flexibility, and that TFT manipulation would have taken too much time to implement cleanly.
+                </p>
+                <!--/ relationship to other standards IEEE, ISO, ANSI, DIN , existing projects patents/trademarks /-->  
+                <p class="lead">
+                    We believe that our project is fully compliant with IEEE and other standards. 
+                    Our project is designed to be safe and user-friendly, and most of its electrical components are hidden inside the box. 
+                    It is easy to use, with simple visual feedback and user controls. 
+                    <br><br>
+                    Surprisingly few automatic sheet music generators exist already. 
+                    AnthemScore, ScoreCloud, and Melody Scanner are some major ones that exist, 
+                    but they are paid products so we did not use any of their code when creating our project.
+                    In addition, our project involves software-hardware co-design, rather than a pure software implementation that can be found in similar products.
                   </p>
             </div>
           </div>
@@ -231,12 +260,15 @@
                       The primary hardware components of this project are the microphone with its associated filtering and amplification circuitry, the keypad, a toggle switch and LED, and the UART serial interface. The keypad connects directly to GPIO pins on the port expander to interface with the PIC32 microcontroller. The output of the microphone’s analog circuitry is read by an ADC pin on the PIC32. 
                   </p> 
                   <h3 >Tuner: Microphone Amplification</h3>
-                  <img style="height: 50%; width: 50%" src="img/sallenkey.png"  alt="A sallen key filter">
-                      <p class="text-center"> The Microphone Circuit</p>
+                  
                   <p class="lead">
                       The first end of our system is the amplification and filtering done in hardware. 
                       Raw audio is picked up by an Adafruit electret microphone. 
-                      The signal is then sent through a non-inverting op-amp with a gain of 50. A gain of 50 was chosen because it increases the microphone output signal amplitude from 15 mV to 750 mV, an amplitude usable by the PIC32’s ADC. 
+                      The signal is then sent through a non-inverting op-amp with a gain of 50. </p>
+                      <img style="height: 50%; width: 50%" src="img/sallenkey.png"  alt="A sallen key filter">
+                      <p class="text-center"> The Microphone Circuit</p> 
+                    <p class="lead">
+                      A gain of 50 was chosen because it increases the microphone output signal amplitude from 15 mV to 750 mV, an amplitude usable by the PIC32’s ADC. 
                       After amplification, the signal is sent through an anti-aliasing Sallen-Key filter. 
                       The Sallen-Key filter was implemented to have a pole at 2.5 kHz. We chose the frequency of 2.5 kHz because the FFT (done on the PIC32) sampled at 8 kHz, and 2.5 kHz corresponds to a note well out of the range of a flute. 
                       The output of the Sallen-Key filter is the input to the PIC32’s ADC. After prototyping on a normal breadboard, the circuit was ported over to the small solderboard.
@@ -375,7 +407,7 @@
                     The final pane is switched to when the record switch on the front of the box is switched; switching it back returns the user to the tempo input screen. 
                     The main differences from the previous two panes, besides the color, are the user prompts at the bottom and the size of the tempo/note being displayed.
                     Both modes allow you to see both pieces of information, but one is more important than the other depending on the current mode.
-                   All four panes are shown below: <br><br>
+                    All four panes are shown below: <br><br>
                   </p>
                   <div class="row">
                     <div class="col-md-3">
@@ -397,8 +429,11 @@
                   </div>
                 <h3>Controls: Keypad and Switches</h3>
                   <p class="lead">
-                    keypads for buttons to input things. toggle switch to switch modes. resistors and stuff, 
-                  </p>
+                      The purpose of the keypad is to take user input to leave the start-up screen, and to take user input for setting the tempo. A keypad thread was written to implement this functionality, and starts with a finite state machine that debounces key presses. Keys are debounced to prevent a single key press from getting interpreted as multiple key presses. After the keys are debounced, this thread interprets what key was pressed, and what action to take accordingly. If the user is in tempo input mode and the tempo has not been entered (via the press of the # button), this thread displays the key pressed on the TFT display in green. This thread blocks users from entering tempos that are over three digits long. If a user attempts to continue entering digits beyond three, these digits do not appear on the TFT display. 
+                      <br><br>Once a user has entered their desired tempo, they press the # button. The tempo is then locked, and further key presses are ignored unless the * button is pressed. The * button allows users to clear and reset the tempo.
+                      <br><br>The purpose of the switch was to switch between tempo input mode and record mode. When the switch is flipped from tempo input mode to record mode, the LED begins blinking and the Python script begins listening for messages. If a tempo has been set by the user, the recording tempo is that user-set tempo. If the user did not enter a tempo, the recording tempo defaults to 120 BPM. 
+                      <br><br>When the switch is flipped from record mode to tempo input mode, the previous tempo is cleared. The user can then set a new tempo for the next recording. 
+                   </p>
 
                 <h3>Software: Closing Thoughts</h3>
                   <p class="lead">
