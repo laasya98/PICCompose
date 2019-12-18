@@ -116,10 +116,10 @@
     <div class="container">
       <div class="row">
         <div class="col-sm-12">
-          <div class="box-shadow-full">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="row">
+          <div class="box-shadow-full" style="vertical-align: middle;">
+            <div class="row" >
+              <div class="col-md-6" >
+                <div class="row" >
                   <img class="about-img" src="img/flute.jpg" class="img-fluid rounded b-shadow-a" alt="Diane playing the flute">
                   
                   <img class="about-img" src="img/music.jpg" class="img-fluid rounded b-shadow-a" alt="Twinkle Twinkle Little Star">
@@ -138,10 +138,13 @@
                         <b>Laasya Renganathan</b> (lpr46) <br><br>
                     </h5>
                   <p class="lead">
-                    Composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. When brainstorming ideas for tunes, oftentimes a composer will try it out on their instrument of choice, make notes, and then translate their thoughts into a music score editing software of their choice to generate the sheet music. 
-                  </p>
+                    PICcompose is a tool that converts raw audio data into an editable music score. 
+                    </p>
                   <p class="lead">
-                    The goal of our project is to eliminate the middleman in the music composition process by creating a tool to directly generate sheet music after playing an instrument.
+                    Over the course of this project, we built a PIC32-driven solution to facilitate the music composition process.
+                    We extracted frequencies from an audio source, converted them to the correct note in the MIDI format. 
+                    We then figured out note timings, and sent the data to an external laptop, which compiled the data into an actual MIDI file, saved it, and loaded it into our group's favorite (free) music editing software!
+                    At the end of the project, we had a nicely packaged product that demonstrated our ability to notate simple melodies with 100% accuracy!  
                   </p>
                 </div>
               </div>
@@ -173,7 +176,14 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="box-shadow-full">
+                <!--/ Rationale /-->
                   <p class="lead">
+                      Composing music can be a time consuming task. It can be almost as difficult to notate the melodies as it is to find inspiration for them. 
+                      When brainstorming ideas for tunes, oftentimes a composer will try it out on their instrument of choice, make notes, 
+                      and then translate their thoughts into a music score editing software of their choice to generate the sheet music. 
+                      The goal of our project was to eliminate the middleman in the music composition process by creating a tool to directly generate sheet music after playing an instrument.
+                 
+                <!--/ Background Math + MIDI explanation /-->    
                     <li> High level design: 
                       <ul>
                         <li>rationale and sources of your project idea</li>
@@ -218,38 +228,73 @@
             <div class="box-shadow-full">
                 <h3>Hardware: Overview </h3>
                   <p class="lead">
-                      verbal description of the circut
+                      The primary hardware components of this project are the microphone with its associated filtering and amplification circuitry, the keypad, a toggle switch and LED, and the UART serial interface. The keypad connects directly to GPIO pins on the port expander to interface with the PIC32 microcontroller. The output of the microphone’s analog circuitry is read by an ADC pin on the PIC32. 
                   </p> 
                   <h3 >Tuner: Microphone Amplification</h3>
+                  <img style="height: 50%; width: 50%" src="img/sallenkey.png"  alt="A sallen key filter">
+                      <p class="text-center"> The Microphone Circuit</p>
                   <p class="lead">
-                      sound go in microphone. need big signal to get input for adc. but also don't want non-audio noise. 
-                      chose to use sallen key. 3.3v lm386? audio amp is base.</p>
-                      <img src="img/sallenkey.png"  alt="A sallen key filter">
-                      <p class="text-center"> this is a sallen key i think</p>
-                      <p class="lead">
-                        also talk about the ramp thing and how we chose cut off frequencies
+                      The first end of our system is the amplification and filtering done in hardware. 
+                      Raw audio is picked up by an Adafruit electret microphone. 
+                      The signal is then sent through a non-inverting op-amp with a gain of 50. A gain of 50 was chosen because it increases the microphone output signal amplitude from 15 mV to 750 mV, an amplitude usable by the PIC32’s ADC. 
+                      After amplification, the signal is sent through an anti-aliasing Sallen-Key filter. 
+                      The Sallen-Key filter was implemented to have a pole at 2.5 kHz. We chose the frequency of 2.5 kHz because the FFT (done on the PIC32) sampled at 8 kHz, and 2.5 kHz corresponds to a note well out of the range of a flute. 
+                      The output of the Sallen-Key filter is the input to the PIC32’s ADC. After prototyping on a normal breadboard, the circuit was ported over to the small solderboard.
+                      Both op-amps used were powered by the PIC32 at 3.3V. The op-amp used was the MCP6242 because that model could be powered with voltages as low as 1.8 V. 
                   </p>
+                      
+                      <div class="row">
+                          <div class="col-md-6">
+                              <img  src="img/amp_out.png"  alt="A sallen key filter">
+                              <p class="text-center"> The Amplifier Output Signal</p>
+                          </div>
+                          <div class="col-md-6">
+                              <img style="height: 80%; width: 80%" src="img/amp_fft.png"  alt="A sallen key filter">
+                              <p class="text-center"> The Amplifier Output FFT</p>
+                          </div>
+                      </div>
+                      <div class="row">
+                          <div class="col-md-6">
+                              <img  src="img/amp_out.png"  alt="A sallen key filter">
+                              <p class="text-center"> The Filter Output Signal</p>
+                          </div>
+                          <div class="col-md-6">
+                              <img  src="img/filter_fft.png"  alt="A sallen key filter">
+                              <p class="text-center"> The Filter Output FFT</p>
+                          </div>
+                      </div>
+                      
+                      
                 <h3>Controls: Keypad and Switches</h3>
                   <p class="lead">
                     keypads for buttons to input things. toggle switch to switch modes. resistors and stuff, 
                   </p>
                 <h3>Metronome: LED Response</h3>
                   <p class="lead">
-                      blinky blink!
+                      The purpose of the LED is to blink at the set tempo when in record mode. 
+                      This acts as a metronome to the user, who is presumably playing an instrument. 
+                      The user can look at the LED when playing their instrument to determine whether they are rushing or dragging. 
+                      Surprisingly, this feature was pivotal to the design because if the user started to rush or drag, the notes would get interpreted to be the wrong lengths/ occur at the wrong times. 
                   </p> 
 
                 <h3>Communication: Serial Wiring</h3>
                   <p class="lead">
-                      used stuff from lab. plugged in. </p>
+                      The UART serial interface for this lab involved connecting a computer to the PIC using USB, in order to send over data for MIDI file generation. 
+                      On the computer side, the connection was as simple as plugging in a USB; the rest of the setup was done in software.  
+                      On the PIC side, we connected the 3 of the 4 wires from the serial-USB cable, avoiding the use of the USB +5V red wire. 
+                      We connected UART receive pin (U2RX) to the green wire on the cable, UART Transmit (U2TX) to the white wire, and MCU ground to the black wire. 
+                      The connector is shown in the following image.  </p>
                       <img src="img/blue_usb.png"  alt="Blue wire thing from Adafruit">
-                      <p class="text-center"> this is the adafruit whatever. we used it in lab 3</p>
-                      <p class="lead">
-                      dont use the red wire!
-                  </p> 
+                      <p class="text-center"> The Adafruit USB to TTL Serial Cable</p>
 
                 <h3>Project Casing: ECEs Learn to CAD</h3>
                   <p class="lead">
-                      we laser cut box. red thing. we sand and file to geth things to fit.
+                      We decided to CAD and laser-cut a box to make our project more presentable. 
+                      The CAD was completed using Autodesk Fusion 360. 
+                      The box was designed to expose the user only to the TFT screen, the record switch, the LED, the microphone, and the keypad. 
+                      The box was laser-cut in the Cornell Rapid Prototyping Lab (RPL). 
+                      The box was cut from scrap red acrylic found in the RPL.
+
                   </p> 
 
                 <h3>Hardware: Closing Thoughts</h3>
@@ -303,14 +348,34 @@
                       uhhhhh idk
                   </p> 
 
-                <h3>Serial: Python and Midi</h3>
+                <h3>Serial: Python and MIDI</h3>
                   <p class="lead">
-                      ok ill write this stuff later.
+                      We used a Python script in order to generate the actual MIDI files by listening for serial inputs, primarily using a library called mido for MIDI parsing and the pySerial library to read in the serial stream. The first thing the script does is initialize a MidiFIle object and fill it with the default data (common between all MIDI files) and establish a serial connection by listening at the 38400 baud rate. On the computer end, that connection involved downloading the Prolific drivers for the UART cable, which can be found 
+                      <a style="color:rgb(107, 102, 102)" href="http://www.prolific.com.tw/US/ShowProduct.aspx?p_id=229&pcid=41"><strong>here</strong></a>
+                      for macOS.  A few default global values are also set, such as a serial timeout length, whether or not the system was in record mode, and some tempo-related data. From here, an infinite while loop was used to process the serial stream. When a command is sent over by the PIC, the script splits the message using spaces as delimiters and saves it in a message array. The loop then goes through a series of cases depending on what is contained in the message. <br>
+                      <br>The five valid serial messages begin with “BPM”, “BEGIN”, “START”, “STOP”, and “END”. “BPM” was used to set the tempo, “BEGIN” and “END” were used to define the recording interval, and “START” and “STOP” were used for individual note length and value determination. If the message contains “BPM”, the next value in the array is assumed to be a tempo in beats per minute that the user input from the keypad. That value was saved as a global variable, which all note length calculations used, and also written to the MidiFile object. If the script received a message with “BEGIN” in it, the system was put into record mode by setting the recording global variable to True.
+                      <br><br>The “START” and “STOP” messages performed similar functions by writing MIDI bytes to the MidiFile object corresponding to when a note started and stopped. In the split array, following the “START” or “STOP” keywords, two pieces of information were sent over by the PIC: MIDI note and global time in milliseconds. When writing out the command in MIDI bytes, four numbers are required (delta time, MIDI message type, note number, velocity). We could directly use the note number, and a default value for velocity, and the same MIDI message type for all notes (“note_on”). However, we needed to perform some additional processing to get the delta time value required. MIDI records global time using microseconds, or “ticks.” and the PPQ (ticks per quarter note) is stored as a default (480) for MIDI tracks created with mido. Both “START” and “STOP” messages required a delta time (that’s how rests are encoded), so we could calculate them similarly using the following formula:
+                      <br>
+                  </p><p class="lead" style="text-align:center;">tick_diff = (start ms - last ms) * (1min / 60000ms) * (ticks/qn * qn/min) </p>
+                  <p class="lead">
+                      Essentially, we found the difference in milliseconds between the current note and the last note, converted that time to minutes, and then used the BPM (qn/min) and PPQ (ticks/qn) to get the note length in ticks, and wrote that number to the MidiFile object. Unfortunately, this system turned out to be too accurate, and resulted in random rests and note blips of sixteenth note value or less. To mitigate this, we reduced our “resolution” to quarter note lengths, i.e. the shortest note length possible was a quarter note. Messages sent with calculated delta time values of less than half a quarter note were ignored, everything else was “snapped” to a quarter note length using integer division and rounding. Apart from note length determination, some additional filtering (such as removing consecutive notes with an octave or more of a difference) was done in the loop.
+                      <br><br>
+                      Finally, when the script received an “END” message, the recording global variable was set to False, and the MidiFile object was saved to a .mid file with the name “recording”+the current date and time in ISO format. The Python script then triggered a subprocess call that would open up the MuseScore application on the computer, where a user could open up the created MIDI file. Once the MuseScore application was closed, the loop could be restarted with the defaults reset, in order to make a new recording.
                   </p> 
 
                 <h3>Controls: User Interface</h3>
                   <p class="lead">
-                    printing pretty pictures
+                    The user interface involved a series of panels drawn using the functions from the TFT library. 
+                    The first pane is an intro screen only displayed once, when the system is first powered on. 
+                    The text is displayed using the <code>printline()</code> functions and the eight note was drawn using the 
+                    <code>tft_drawLine()</code> and <code>tft_fillCircle()</code> functions.
+                    The following two panes are displayed to the user during the tempo input mode, and change based on button presses. 
+                    The first of the two is displayed as a user is inputting tempo, and the later one is displayed when the # key is pressed to "lock" the tempo input. The user prompts at the bottom change as well.
+                    <code>tft_fillRoundRect()</code> functions are used to change displays, such as the note played at the time.
+                    The final pane is switched to when the record switch on the front of the box is switched; switching it back returns the user to the tempo input screen. 
+                    The main differences from the previous two panes, besides the color, are the user prompts at the bottom and the size of the tempo/note being displayed.
+                    Both modes allow you to see both pieces of information, but one is more important than the other depending on the current mode.
+                   All four panes are shown below: <br><br>
                   </p>
                   <div class="row">
                     <div class="col-md-3">
