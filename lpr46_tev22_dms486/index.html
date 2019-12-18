@@ -145,8 +145,8 @@
                     </p>
                   <p class="lead">
                     Over the course of this project, we built a PIC32-driven solution to facilitate the music composition process.
-                    We extracted frequencies from an audio source, converted them to the correct note in the MIDI format. 
-                    We then figured out note timings, and sent the data to an external computer, which compiled the data into an actual MIDI file, saved it, and loaded it into MuseScore, our group's favorite (free) music editing software!
+                    We extracted frequencies from an audio source and converted them to the correct note in the MIDI format. 
+                    We then figured out note timings and sent the data to an external computer, which compiled the data into an actual MIDI file, saved it, and loaded it into MuseScore, our group's favorite (free) music editing software!
                     At the end of the project, we had a nicely packaged product that demonstrated our ability to notate simple melodies with 100% accuracy!  
                   </p>
                 </div>
@@ -316,10 +316,11 @@
                 <h3>Hardware: Overview </h3>
                   <p class="lead">
                       The primary hardware components of this project are the microphone with its associated filtering and amplification circuitry, 
-                      the keypad, a toggle switch and LED, and the UART serial interface. 
+                      the keypad, a toggle switch and LED, the UART serial interface, and the TFT LCD.
                       The keypad connects directly to GPIO pins on the port expander to interface with the PIC32 microcontroller. 
                       The output of the microphone’s analog circuitry is read by an ADC pin on the PIC32. 
-                      The toggle switch and LED also connect to GPIO pins, while the UART is connected to the UART receive and transmit pins of the board. 
+                      The toggle switch and LED also connect to GPIO pins, while the UART is connected to the UART receive and transmit pins of the board.
+                      The TFT display, which was integral to the user interface aspect of the project, also connected directly to the board. 
                       Our final circuitry was soldered onto a solder board, and our hardware was packed into a clean box for the user.
                   </p> 
                   <h3 >Tuner: Microphone Amplification</h3>
@@ -363,12 +364,20 @@
                       
                 <h3>Controls: Keypad and Switches</h3>
                   <p class="lead">
-                      The keypad has four row pins and three column pins, and when a button is pressed it closes a switch between the pins corresponding to the column and row that the pressed button is in. 
+                      The keypad, which is for the user to input tempo, has four row pins and three column pins. 
+                      When a button is pressed it closes a switch between the pins corresponding to the column and row that the pressed button is in. 
                       We used the port expander on the board to interface with the keypad, and used the SPI bus to read from and write to the GPIO pins in port Y. 
                       We connected the three column pins to GPIO pins Y4 - Y6, and the four row pins through 330Ω resistors to GPIO pins Y0 - Y3.
+                      Pins Y0-Y3 are configured as outputs, while pins Y4-Y6 are configured as inputs with pullup resistors.
                   </p>
                   <img src="img/keypad_sch.png"  alt="keypad circuit">
                   <p class="text-center"> The Keypad Configuration</p>
+                  <p class="lead">
+                      The switch is a simple toggle switch for the user to turn record mode on and off. 
+                      The schematic for this simple circuit is shown below.
+                      One side of the switch is connected to power and the other to ground, while the middle pin, the output pin, is connected through a 330Ω resistor to a GPIO pin on the port expander. 
+                      The pin will then simply read 1 or 0 depending on which way the switch is flipped.
+                  </p>
                 <h3>Metronome: LED Response</h3>
                   <p class="lead">
                       The purpose of the LED is to blink at the set tempo when in record mode. 
@@ -456,9 +465,24 @@
                   </p> 
                 <h3>Audio Processing: FFT and Note Detection</h3>
                   <p class="lead">
-                      adapted bruce's code. picking maxes, changing bins, midi conversion etc. etc.
+                      In order to interpret the notes in our audio data, we ran an FFT on the data coming into the ADC from the microphone circuit. 
+                      Our FFT code was adapted from sample code on the ECE 4760 website. 
+                      We used the same function and FFT thread, but changed the resolution of the FFT from a 512-point to a 1024-point FFT in order to more accurately distinguish between notes in our frequency range of interest. 
+                      Above middle C (C4), adjacent notes are at least 16Hz apart, and in the main range of a flute the difference between notes is more than that. 
+                      With an 8kHz sampling rate, a 1024-point FFT gives us a resolution of about 8Hz, which allows us to tell apart the notes we care about. 
+                      To avoid high-frequency aliasing caused by the start and stop of the FFT sampling, a ramp function was used. 
+                      Essentially, this ramp cut the beginning and end components of the FFT sample. <br><br>
+                      In the FFT thread, we added calculations to determine the highest-amplitude frequency and convert it into a note MIDI number. 
+                      To do this we simply added to a pre-existing loop that iterates through the FFT bins, comparing the amplitudes and saving both amplitude and frequency of any bin with a higher amplitude than the previously saved highest amplitude. 
+                      The frequency is calculated by multiplying the bin width (in our case, 8Hz) by the bin number. 
+                      Due to the presence of some large low-frequency components, we ignore the first 15 bins, giving us a frequency detection threshold of 117Hz.
+                      Once we know the strongest frequency present in the FFT, we convert the frequency to its MIDI number using the following equation, where m is the MIDI number and fm is the note frequency: 
                   </p> 
-
+                  <p class="lead">
+                      This MIDI number is saved as the current MIDI note (the note from the most recent run of the FFT), and used later in the serial communication. 
+                      We also calculate which octave the note is in from its MIDI number, which is used when we display the note name to the TFT screen.
+                  </p>
+    
                 <h3>Audio Processing: Metronome and Timing Threads</h3>
                   <p class="lead">
                       An entire thread was dedicated to the metronome aspect of record mode. 
