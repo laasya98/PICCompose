@@ -219,8 +219,10 @@
                     <p class="lead">
                       To take an FFT of continuous time audio data, the FFT algorithm first samples the data to generate the input signal, 
                       using the ADC on the microcontroller to get input from the microphone. 
-                      It takes the real and imaginary components of the signal at discrete time intervals and outputs a one pair of real and imaginary amplitude components corresponding to each sampled frequency. 
-                      The output frequencies are evenly spaced from 0 to the Nyquist rate, which is half of the sampling rate. N samples taken at m Hz yields n/2 discrete frequencies starting at 0 and incrementing by 2m/n Hz for each “bin”. We chose to use an 8 kHz sampling rate with 1024 samples for the FFT, giving a frequency spacing of about 8Hz. We found the bin with the max amplitude, and then used the bin spacing to convert back to a real frequency, and later to a MIDI note.
+                      It takes the real and imaginary components of the signal at discrete time intervals and outputs one pair of real and imaginary amplitude components corresponding to each sampled frequency. 
+                      The output frequencies are evenly spaced from 0 to the Nyquist rate, which is half of the sampling rate. 
+                      N samples taken at m Hz yields n/2 discrete frequencies starting at 0 and incrementing by 2m/n Hz for each “bin”. We chose to use an 8 kHz sampling rate with 1024 samples for the FFT, giving a frequency spacing of about 8Hz. 
+                      We found the bin with the largest amplitude, and then used the bin spacing to convert this back to a real frequency and later to a MIDI note.
                     </p>
                   <h5 >  MIDI Overview  </h5>
                     <p class="lead">
@@ -229,13 +231,13 @@
                         Each main MIDI message is encoded into bytes of the following format.
                         <br><p class="text-center" style="font-size: x-large;">delta time | message_type | data</p><br>
                         <p class="lead">
-                        Delta time is the time (in microseconds, or “ticks”) since the last message, and the data will be two bytes long 
-                        corresponding to what the message type is. For our purposes, we are only using the <code>note_on</code> message, which looks like this:
+                        Delta time is the time (in microseconds, or “ticks”) since the last message. The data will be two bytes long, and what those bytes mean 
+                        corresponds to what the message type is. For our purposes, we are only using the <code>note_on</code> message, which looks like this:
                         </p><br><p class="text-center" style="font-size: x-large;">delta time | 0x90 | note_number | velocity</p><br>
                         <p class="lead">
                         Note number goes from 0 to 127 and corresponds to a note between A0 and G9. 
-                        For context, a flute’s range is between B3 and C6, so MIDI fully encompasses almost all instruments' range. 
-                        The velocity value corresponds to volume, for our purposes we will set this to a default intermediate value.
+                        For context, a flute’s range is between B3 and C6, so MIDI fully encompasses the range of almost all instruments. 
+                        The velocity value corresponds to volume; for our purposes, we will set this to a default intermediate value.
                         MIDI also supports meta-messages, which relate to the file at large. 
                         This includes tempo, key signature, file name, and other similar messages. 
                         They have a structure as follows:
@@ -247,7 +249,7 @@
                         For our project, we mainly use the <code>set_tempo</code> meta message, which appears like this:
                       </p><br><p class="text-center" style="font-size: x-large;">FF | 0x51 | 0x03 | TT | TT | TT</p><br><p class="lead">
                         The tempo needs to be encoded as ticks per quarter note. 
-                        The default value is 120 BPM, or a MIDI tempo of 500000. 
+                        The default tempo is 120 BPM, or a MIDI tempo of 500000. 
                         MIDI has support for many other musical encodings, but these are the features we found useful to our project.
                     </p>
                 
@@ -474,7 +476,7 @@
                       Above middle C (C4), adjacent notes are at least 16Hz apart, and in the main range of a flute the difference between notes is more than that. 
                       With an 8kHz sampling rate, a 1024-point FFT gives us a resolution of about 8Hz, which allows us to tell apart the notes we care about. 
                       To avoid high-frequency aliasing caused by the start and stop of the FFT sampling, a ramp function was used. 
-                      Essentially, this ramp cut the beginning and end components of the FFT sample. <br><br>
+                      Essentially, this ramp cut the beginning and end components of the FFT sample. <br>
                       In the FFT thread, we added calculations to determine the highest-amplitude frequency and convert it into a note MIDI number. 
                       To do this we simply added to a pre-existing loop that iterates through the FFT bins, comparing the amplitudes and saving both amplitude and frequency of any bin with a higher amplitude than the previously saved highest amplitude. 
                       The frequency is calculated by multiplying the bin width (in our case, 8Hz) by the bin number. 
