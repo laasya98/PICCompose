@@ -190,7 +190,11 @@
                 </p> 
                   <h5 >  Audio Input  </h5>
                     <p class="lead">
-                      math about the sallen key filter
+                      The raw audio input to PICcompose needed to be amplified. We chose to use a Sallen-Key filter due to its complex conjugate poles. 
+                      The corner frequency, where frequencies are cut off, of a Sallen-Key filter is calculated as follows:
+                      <br>
+                      The Q value of a Sallen-Key is calculated as follows:
+                      <br>
                     </p>
                   <h5 >  Note Detection  </h5>
                     <p class="lead">
@@ -198,7 +202,20 @@
                     </p>
                   <h5 >  MIDI Overview  </h5>
                     <p class="lead">
-                      how do midi bytes work
+                        MIDI (Musical Instrument Digital Interface) is an industry standard method to store song information. This project involves creating MIDI files, which we do by writing MIDI messages to a .mid file. Each main MIDI message is encoded into bytes of the following format.
+                        <br><p class="text-center" style="font-size: x-large;">delta time | message_type | data</p><br>
+                        <p class="lead">
+                        Delta time is the time (in microseconds, or “ticks”) since the last message, and the data will be two bytes long corresponding to what the message type is. For our purposes, we are only using the note_on message, which looks like this:
+                        </p><br><p class="text-center" style="font-size: x-large;">delta time | 0x90 | note_number | velocity</p><br>
+                        <p class="lead">
+                        Note number goes from 0 to 127 and corresponds to a note between A0 and G9. For context, a flute’s range is between B3 and C6, so MIDI fully encompasses all instruments. The velocity value corresponds to volume, for our purposes we will set this to a default intermediate value.
+                        MIDI also supports meta-messages, which relate to the file at large. This includes tempo, key signature, file name, and other similar messages. They have a structure as follows:
+                        </p><br><p class="text-center" style="font-size: x-large;">FF | meta_type | length | data</p><br>
+                        <p class="lead">
+                        The delta time in this case doesn’t matter. Since some of the data can be encoded with different numbers of bytes depending on the meta message type, a length field needs to be specified. For our project, we mainly use the set_tempo meta message, which appears like this:
+                      </p><br><p class="text-center" style="font-size: x-large;">FF | 0x51 | 0x03 | TT | TT | TT</p><br><p class="lead">
+                        The tempo needs to be encoded as ticks per quarter note. The default value is 120 BPM, or a MIDI tempo of 500000. MIDI has support for many other musical encodings, but these are the features we found useful to our project.
+                        
                     </p>
                 
                 <!--/ Logical Structure /-->  
@@ -306,8 +323,12 @@
                       The purpose of the LED is to blink at the set tempo when in record mode. 
                       This acts as a metronome to the user, who is presumably playing an instrument. 
                       The user can look at the LED when playing their instrument to determine whether they are rushing or dragging. 
-                      Surprisingly, this feature was pivotal to the design because if the user started to rush or drag, the notes would get interpreted to be the wrong lengths/ occur at the wrong times. 
+                      Surprisingly, this feature was pivotal to the design because if the user started to rush or drag, the 
+                      notes would get interpreted to be the wrong lengths/ occur at the wrong times. 
+                      The LED circuit is simple, involving one pin to ground and one to the PIC via a 330 ohm resistor.
                   </p> 
+                  <img src="img/led_sch.png"  alt="led circuit">
+                  <p class="text-center"> The LED Circuit</p>
 
                 <h3>Communication: Serial Wiring</h3>
                   <p class="lead">
@@ -327,12 +348,20 @@
                       The dimensions were 22cm x 15cm x 10cm.
                       The box was laser-cut in the Cornell Rapid Prototyping Lab (RPL). 
                       The box was cut from scrap red acrylic found in the RPL.
-
                   </p> 
+                  <img src="img/box_cad.png"  alt="CAD for the box">
+                  <p class="text-center"> CAD for the Box Design</p>
 
                 <h3>Hardware: Closing Thoughts</h3>
                   <p class="lead">
-                      dont laser cut scrap plywood it catches on fire. make sure your parts fit or u have to sand them. make sure you plug in things correctly tbh.
+                      Overall, the hardware implementation was fairly straightforward. 
+                      Future improvements could include increasing the gain on the amplifier. 
+                      Increasing the gain would allow people to play their instruments quietly, or further away from the box. 
+                      However, this would come at the cost of picking up undesired noise, such as people talking. 
+                      <br><br>
+                      Additionally, when the box was laser-cut, the hole designated for the microphone was slightly too small. 
+                      We eventually filed away some acrylic to allow the microphone to fit. 
+                      If this box were to be printed in the future, the microphone hole size should be increased.
                   </p>  
             </div>
           </div>
@@ -469,27 +498,32 @@
           <div class="col-sm-12">
             <div class="box-shadow-full">
                   <p class="lead">
-                      <br>hello everyone<br>
-                    <li> Results of the design: <br>
-                      This is the section which is most often lacking in student projects. Be specific! <br>
-                      If you took calibration data, then show it!<br>
-                      If you have images or video, include it. <br>
-                      Show:<br>
-                      <ul>
-                        <li> speed of execution (hesitation, filcker, interactiveness, concurrency)<br>
-                          Be quantitative. Show graphs!              </li>
-                        <li>accuracy (numeric, music frequencies, video signal timing, etc)<br>
-                          Be quantitative. Show graphs!
-                        </li>
-                        <li> how you enforced safety in the design.</li>
-                        <li>interference with other people's designs (e.g. cpu noise, RF interference).</li>
-                        <li> usability by you and other people (perhaps with special needs). </li>
-                      </ul>
-                    </li>
+                      The execution speed for both the note detection and serial communication were fast enough for our project that the execution was not hindered. 
+                      The only noticeable latency is immediately between when a user plays a note, and the first time that note is displayed. 
+                      The FFT does take some time to execute, but users get feedback as soon as possible. 
+                      On the notation end, fully real-time generation of sheet music was non-essential for our design; the annotated score pops up at the end for a user to evaluate.
+                      You can see our project in action here: </p>
+                      <p><iframe  width="420" height="315"  src="https://www.youtube.com/embed/7qzfAA90V8g" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
+                      <p class="text-center"> Our YouTube demo!</p>
+                      <br>
+                      <p class="lead">
+                      As can be seen in our demo video, we are able to notate simple melodies, such as Twinkle Twinkle Little Star, 
+                      with 100% accuracy in both note detection as well as note lengths. 
+                      Our note resolution in the flute’s octave range is also error-free for a short chromatic scale. 
+                      Screenshots from our notated scores are shown below: </p>
+                      
+                      <p class="lead">
+                      These were recorded at two different tempos in our demo, with no change to accuracy. 
+                      We anticipate our notation accuracy will decrease with more complex music, but have not verified this yet. 
+                      However, since the score is editable, even if there are errors in it a user can go in and correct them using their notation software and save an updated copy. 
+                      But, more robust testing of the product will definitely be required, especially if we want to develop this further.
+                      <br><br>
+                      We enforced safety in the design by encapsulating our electronic components in a box. The box prevents a user from poking around and potentially get shocked by any of our circuitry. 
+                      Our project did not cause or experience interference from other people’s designs. 
+                      
                   </p>
                   
-              <p><iframe  width="420" height="315"  src="https://www.youtube.com/embed/7qzfAA90V8g" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
-              <p class="text-center"> <strong>A link to our YouTube demo!</strong> </p>
+              
             </div>
           </div>
         </div>
@@ -613,7 +647,13 @@
                     <div class="col-md-4">
                         <img height=304 width=257 src="img/diane.png"  alt="Diane">
                         <p class="lead" style="text-align: center; font-size: x-large;"><strong>Diane</strong></p>
-                        diane did things
+                        <ul style="text-align: left;">
+                            <li>Constructed hardware amplifier and filter</li>
+                            <li>Design the box CAD and oversaw the laser-cutting</li>
+                            <li>Configured the physical user interface (with keypad, toggle switch, and LED)</li>
+                            <li>Helped design the PIC-side MIDI message serial interface</li>
+                            <li>Improved the audio filtering in software</li>
+                          </ul>
                     </div>
                     <div class="col-md-4">
                         <img height=304 width=257 src="img/laas.png"  alt="Laasya">
